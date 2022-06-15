@@ -29,6 +29,7 @@ public interface NotifyListener {
 
     /**
      * Triggered when a service change notification is received.
+     * 当收到服务变动通知的时候，触发执行
      * <p>
      * Notify needs to support the contract: <br>
      * 1. Always notifications on the service interface and the dimension of the data type. that is, won't notify part of the same type data belonging to one service. Users do not need to compare the results of the previous notification.<br>

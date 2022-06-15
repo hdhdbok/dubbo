@@ -91,12 +91,16 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         try {
             Registry registry = REGISTRIES.get(key);
             if (registry != null) {
+                // 缓存中有，则直接返回
                 return registry;
             }
+            // 如果注册中心还没创建过，则调用抽象方法 createRegistry(url)重新创建一个
+            // createRegistry 方法由具体的子类实现
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);
             }
+            // 创建成功，缓存起来
             REGISTRIES.put(key, registry);
             return registry;
         } finally {

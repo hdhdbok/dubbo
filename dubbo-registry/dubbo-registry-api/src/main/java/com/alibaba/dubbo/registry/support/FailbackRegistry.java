@@ -47,25 +47,27 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     // Timer for failure retry, regular check if there is a request for failure, and if there is, an unlimited retry
     private final ScheduledFuture<?> retryFuture;
-
+    // 发起注册失败的URL集合
     private final Set<URL> failedRegistered = new ConcurrentHashSet<URL>();
-
+    // 取消注册失败的URL集合
     private final Set<URL> failedUnregistered = new ConcurrentHashSet<URL>();
-
+    // 发起订阅失败的监听器集合
     private final ConcurrentMap<URL, Set<NotifyListener>> failedSubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
-
+    // 取消订阅失败的监听器集合
     private final ConcurrentMap<URL, Set<NotifyListener>> failedUnsubscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
-
+    // 通知失败的URL集合
     private final ConcurrentMap<URL, Map<NotifyListener, List<URL>>> failedNotified = new ConcurrentHashMap<URL, Map<NotifyListener, List<URL>>>();
 
     /**
      * The time in milliseconds the retryExecutor will wait
+     * 默认每 5秒 重试一次
      */
     private final int retryPeriod;
 
     public FailbackRegistry(URL url) {
         super(url);
         this.retryPeriod = url.getParameter(Constants.REGISTRY_RETRY_PERIOD_KEY, Constants.DEFAULT_REGISTRY_RETRY_PERIOD);
+        // 每经过固定间隔(默认为5秒)重试一次
         this.retryFuture = retryExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -193,6 +195,7 @@ public abstract class FailbackRegistry extends AbstractRegistry {
         removeFailedSubscribed(url, listener);
         try {
             // Sending a subscription request to the server side
+            // 向服务器端发送订阅请求
             doSubscribe(url, listener);
         } catch (Exception e) {
             Throwable t = e;
@@ -282,7 +285,8 @@ public abstract class FailbackRegistry extends AbstractRegistry {
 
     @Override
     protected void recover() throws Exception {
-        // register
+        // register:恢复注册信息时，将url放入注册失败队列，通过注册任务重新注册
+        // com.alibaba.dubbo.registry.support.FailbackRegistry.retry
         Set<URL> recoverRegistered = new HashSet<URL>(getRegistered());
         if (!recoverRegistered.isEmpty()) {
             if (logger.isInfoEnabled()) {
@@ -292,7 +296,8 @@ public abstract class FailbackRegistry extends AbstractRegistry {
                 failedRegistered.add(url);
             }
         }
-        // subscribe
+        // subscribe:恢复订阅信息时，先将订阅信息放入订阅失败队列，通过定时任务去重新订阅
+        // com.alibaba.dubbo.registry.support.FailbackRegistry.retry
         Map<URL, Set<NotifyListener>> recoverSubscribed = new HashMap<URL, Set<NotifyListener>>(getSubscribed());
         if (!recoverSubscribed.isEmpty()) {
             if (logger.isInfoEnabled()) {

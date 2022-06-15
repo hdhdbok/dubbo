@@ -55,8 +55,9 @@ public interface RegistryService {
 
     /**
      * Subscrib to eligible registered data and automatically push when the registered data is changed.
+     * 订阅符合条件的注册数据，并在注册数据发生变化时自动推送。
      * <p>
-     * Subscribing need to support contracts:<br>
+     * Subscribing need to support contracts:订阅需要支持以下几种场景<br>
      * 1. When the URL sets the check=false parameter. When the registration fails, the exception is not thrown and retried in the background. <br>
      * 2. When URL sets category=routers, it only notifies the specified classification data. Multiple classifications are separated by commas, and allows asterisk to match, which indicates that all categorical data are subscribed.<br>
      * 3. Allow interface, group, version, and classifier as a conditional query, e.g.: interface=com.alibaba.foo.BarService&version=1.0.0<br>
@@ -65,8 +66,8 @@ public interface RegistryService {
      * 6. Allow URLs which have the same URL but different parameters to coexist,they can't cover each other.<br>
      * 7. The subscription process must be blocked, when the first notice is finished and then returned.<br>
      *
-     * @param url      Subscription condition, not allowed to be empty, e.g. consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin
-     * @param listener A listener of the change event, not allowed to be empty
+     * @param url      Subscription condition, not allowed to be empty, e.g. consumer://10.20.153.10/com.alibaba.foo.BarService?version=1.0.0&application=kylin : 订阅条件，不允许为空
+     * @param listener A listener of the change event, not allowed to be empty : change事件的监听器，不允许为空
      */
     void subscribe(URL url, NotifyListener listener);
 

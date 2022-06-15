@@ -468,6 +468,7 @@ public class Constants {
 
     /**
      * Reconnection period in milliseconds for register center
+     * 注册中心的重新连接周期（以毫秒为单位）
      */
     public static final String REGISTRY_RECONNECT_PERIOD_KEY = "reconnect.period";
 

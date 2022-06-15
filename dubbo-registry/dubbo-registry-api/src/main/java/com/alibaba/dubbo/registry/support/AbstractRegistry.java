@@ -65,14 +65,17 @@ public abstract class AbstractRegistry implements Registry {
     private final Properties properties = new Properties();
     // File cache timing writing
     private final ExecutorService registryCacheExecutor = Executors.newFixedThreadPool(1, new NamedThreadFactory("DubboSaveRegistryCache", true));
-    // Is it synchronized to save the file
+    // Is it synchronized to save the file: 是否是同步保存注册信息到配置文件
     private final boolean syncSaveFile;
     private final AtomicLong lastCacheChanged = new AtomicLong();
     private final Set<URL> registered = new ConcurrentHashSet<URL>();
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
+    // 内存中的缓存: notified是ConcurrentHashMap里面又嵌套了一个Map,
+    // 外层Map的key是消费者的 URL,内层 Map 的 key 是分类，包含 providers> consumers> routes> configurators 四种。
+    // value则是对应的服务列表，对于没有服务提供者提供服务的URL,它会以特殊的empty://前缀开头。
     private final ConcurrentMap<URL, Map<String, List<URL>>> notified = new ConcurrentHashMap<URL, Map<String, List<URL>>>();
     private URL registryUrl;
-    // Local disk cache file
+    // Local disk cache file: 将配置缓存到磁盘
     private File file;
 
     public AbstractRegistry(URL url) {
@@ -190,6 +193,14 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * 从磁盘加载配置信息: 持久化的注册信息
+     *
+     * Properties保存了所有服务提供者的URL,使用URL#serviceKey()作为key, 提供者列表, 路由规则列表, 配置规则列表等作为value。
+     * 由于value是列表，当存在多个的时候使用空格隔开。
+     * 还有一个特殊的key.registies, 保存所有的注册中心的地址。
+     * 如果应用在启动过程中，注册中心无法连接或宕机，则Dubbo框架会自动通过本地缓存加载Invokers
+     */
     private void loadProperties() {
         if (file != null && file.exists()) {
             InputStream in = null;
@@ -348,6 +359,11 @@ public abstract class AbstractRegistry implements Registry {
         }
     }
 
+    /**
+     * AbstractRegistry#notify 方法中封装了更新内存缓存和更新文件缓存的逻辑。
+     * 当客户端第一次订阅获取全量数据，或者后续由于订阅得到新数据时，都会调用该方法进行保存。
+     * @param urls
+     */
     protected void notify(List<URL> urls) {
         if (urls == null || urls.isEmpty()) return;
 
@@ -436,8 +452,11 @@ public abstract class AbstractRegistry implements Registry {
             properties.setProperty(url.getServiceKey(), buf.toString());
             long version = lastCacheChanged.incrementAndGet();
             if (syncSaveFile) {
+                // 同步保存注册信息到properties文件
                 doSaveProperties(version);
             } else {
+                // 异步保存注册信息到properties文件
+                // 异步保存，放入线程池。会传入一个AtomicLong 的版本号，保证数据是最新的
                 registryCacheExecutor.execute(new SaveProperties(version));
             }
         } catch (Throwable t) {
