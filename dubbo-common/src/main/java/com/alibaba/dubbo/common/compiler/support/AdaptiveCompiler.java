@@ -30,6 +30,7 @@ public class AdaptiveCompiler implements Compiler {
     private static volatile String DEFAULT_COMPILER;
 
     public static void setDefaultCompiler(String compiler) {
+        // 设置默认的编译器名称
         DEFAULT_COMPILER = compiler;
     }
 
@@ -43,6 +44,7 @@ public class AdaptiveCompiler implements Compiler {
         } else {
             compiler = loader.getDefaultExtension();
         }
+        // 通过 ExtensionLoader 获取对应的编译器扩展类实现，并调用真正的 compile 做编译
         return compiler.compile(code, classLoader);
     }
 

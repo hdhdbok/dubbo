@@ -29,6 +29,10 @@ public class ExtensionLoader_Compatible_Test {
 
     @Test
     public void test_getExtension() throws Exception {
+        /**
+         * @see ExtensionLoader#findAnnotationName(java.lang.Class)
+         * 配置时可以只配置类名，不指定 name 值，此时会自动查找类上有没有@Extension注解，如果没有注解，默认 类名.toLowerCase() 为 name
+         */
         assertTrue(ExtensionLoader.getExtensionLoader(CompatibleExt.class).getExtension("impl1") instanceof CompatibleExtImpl1);
         assertTrue(ExtensionLoader.getExtensionLoader(CompatibleExt.class).getExtension("impl2") instanceof CompatibleExtImpl2);
     }

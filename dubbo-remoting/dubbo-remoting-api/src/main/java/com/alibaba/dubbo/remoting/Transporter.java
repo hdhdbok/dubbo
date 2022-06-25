@@ -34,6 +34,11 @@ public interface Transporter {
 
     /**
      * Bind a server.
+     * 当外部调用 Transporter#bind 方法时，会动态从传入的参数 URL 中提取 key 参数 “server” 的value值，如果能匹配上某个扩展实现类则直接使用对应的实现类；
+     * 如果未匹配上，则继续通过第二个key参数 “transporter” 提取value值。
+     * 如果还未匹配上则使用默认值
+     * 如果都没匹配上，则抛出异常。
+     * 也就是说， 如果 @Adaptive 中传入了多个参数，则依次进行实现类的匹配，直到最后抛出异常。
      *
      * @param url     server url
      * @param handler

@@ -51,8 +51,11 @@ public class JavassistCompiler extends AbstractCompiler {
     public Class<?> doCompile(String name, String source) throws Throwable {
         int i = name.lastIndexOf('.');
         String className = i < 0 ? name : name.substring(i + 1);
+        // 初始化 Javassist 的类池
         ClassPool pool = new ClassPool(true);
+        // 初始化Javassist,设置默认参数，如设置当前的classpatho
         pool.appendClassPath(new LoaderClassPath(ClassHelper.getCallerClassLoader(getClass())));
+        // 通过正则匹配出所有 import 的包，并使用 Javassist 添加 import
         Matcher matcher = IMPORT_PATTERN.matcher(source);
         List<String> importPackages = new ArrayList<String>();
         Map<String, String> fullNames = new HashMap<String, String>();
@@ -73,6 +76,7 @@ public class JavassistCompiler extends AbstractCompiler {
             }
         }
         String[] packages = importPackages.toArray(new String[0]);
+        // 通过正则匹配出所有 extends 的包，创建 Class 对象，并使用 Javassist 添加 extends
         matcher = EXTENDS_PATTERN.matcher(source);
         CtClass cls;
         if (matcher.find()) {
@@ -89,6 +93,7 @@ public class JavassistCompiler extends AbstractCompiler {
         } else {
             cls = pool.makeClass(name);
         }
+        // 通过正则匹配出所有 implements 包，并使用 Javassist 添加 implements
         matcher = IMPLEMENTS_PATTERN.matcher(source);
         if (matcher.find()) {
             String[] ifaces = matcher.group(1).trim().split("\\,");
@@ -105,6 +110,7 @@ public class JavassistCompiler extends AbstractCompiler {
                 cls.addInterface(pool.get(ifaceClass));
             }
         }
+        // 通过正则匹配出类里面所有内容，即得到｛｝中的内容，再通过正则匹配出所有方法, 并使用 Javassist 添加类方法。
         String body = source.substring(source.indexOf("{") + 1, source.length() - 1);
         String[] methods = METHODS_PATTERN.split(body);
         for (String method : methods) {
@@ -119,6 +125,7 @@ public class JavassistCompiler extends AbstractCompiler {
                 }
             }
         }
+        // 生成 Class 对象
         return cls.toClass(ClassHelper.getCallerClassLoader(getClass()), JavassistCompiler.class.getProtectionDomain());
     }
 

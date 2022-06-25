@@ -20,11 +20,7 @@ import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.common.extension.ExtensionLoader;
 import com.alibaba.dubbo.common.extensionloader.activate.ActivateExt1;
-import com.alibaba.dubbo.common.extensionloader.activate.impl.ActivateExt1Impl1;
-import com.alibaba.dubbo.common.extensionloader.activate.impl.GroupActivateExtImpl;
-import com.alibaba.dubbo.common.extensionloader.activate.impl.OrderActivateExtImpl1;
-import com.alibaba.dubbo.common.extensionloader.activate.impl.OrderActivateExtImpl2;
-import com.alibaba.dubbo.common.extensionloader.activate.impl.ValueActivateExtImpl;
+import com.alibaba.dubbo.common.extensionloader.activate.impl.*;
 import com.alibaba.dubbo.common.extensionloader.ext1.SimpleExt;
 import com.alibaba.dubbo.common.extensionloader.ext1.impl.SimpleExtImpl1;
 import com.alibaba.dubbo.common.extensionloader.ext1.impl.SimpleExtImpl2;
@@ -37,24 +33,15 @@ import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt1;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt2;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt3;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt4;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1Impl1;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdd1;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdd2;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt2_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt3_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt4_ManualAdaptive;
+import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.*;
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.Ext9Empty;
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.impl.Ext9EmptyImpl;
 import com.alibaba.dubbo.common.extensionloader.injection.InjectExt;
 import com.alibaba.dubbo.common.extensionloader.injection.impl.InjectExtImpl;
-
 import junit.framework.Assert;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -129,6 +116,22 @@ public class ExtensionLoaderTest {
 
     @Test
     public void test_getExtension_WithWrapper() throws Exception {
+        /**
+         * 配置文件中的内容如下
+         * impl1=com.alibaba.dubbo.common.extensionloader.ext6_wrap.impl.Ext5Impl1
+         * impl2=com.alibaba.dubbo.common.extensionloader.ext6_wrap.impl.Ext5Impl2
+         * wrapper1=com.alibaba.dubbo.common.extensionloader.ext6_wrap.impl.Ext5Wrapper1
+         * wrapper2=com.alibaba.dubbo.common.extensionloader.ext6_wrap.impl.Ext5Wrapper2
+         *
+         * 1: getExtension("impl1")
+         *  a. 先获取了 Ext5Impl1 对象，然后为其注入依赖的属性
+         *  b. 拿着 Ext5Impl1 实例为所有包装器类（Ext5Wrapper1， Ext5Wrapper2）注入
+         *  按照 wrapper1,wrapper2 的顺序一次注入后，返回了 wrapper2 的实例 Ext5Wrapper2
+         *  注入时先把 Ext5Impl1 的实例 注入到了 wrapper1 实例中, 然后注入 wrapper2 实例的时候，直接注入的 wrapper1 实例，而不是 Ext5Impl1 实例
+         * 2: 同理 getExtension("impl2")
+         *  返回的也是 wrapper2 的实例 Ext5Wrapper2
+         *  其中 Ext5Impl2 的实例 注入到了 wrapper1 实例中, 然后注入 wrapper2 实例的时候，也是直接注入的 wrapper1 实例
+         */
         WrappedExt impl1 = ExtensionLoader.getExtensionLoader(WrappedExt.class).getExtension("impl1");
         assertThat(impl1, anyOf(instanceOf(Ext5Wrapper1.class), instanceOf(Ext5Wrapper2.class)));
 
@@ -279,6 +282,8 @@ public class ExtensionLoaderTest {
     public void test_AddExtension_Adaptive_ExceptionWhenExistedAdaptive() throws Exception {
         ExtensionLoader<AddExt1> loader = ExtensionLoader.getExtensionLoader(AddExt1.class);
 
+        // 不存在时，判断接口定义的方法是否存在某个方法包含 @Adaptive 注解
+        // 如果有的话则自动生成自适应拓展类，没有则报错
         loader.getAdaptiveExtension();
 
         try {
@@ -354,6 +359,7 @@ public class ExtensionLoaderTest {
     public void test_InitError() throws Exception {
         ExtensionLoader<InitErrorExt> loader = ExtensionLoader.getExtensionLoader(InitErrorExt.class);
 
+        // 加载拓展类时，ok 加载成功; error 加载的时候，静态代码块报错，所以加载失败，所以缓存中不存在 error 拓展类
         loader.getExtension("ok");
 
         try {
@@ -367,16 +373,21 @@ public class ExtensionLoaderTest {
 
     @Test
     public void testLoadActivateExtension() throws Exception {
+        final ExtensionLoader<ActivateExt1> loader = ExtensionLoader.getExtensionLoader(ActivateExt1.class);
         // test default
         URL url = URL.valueOf("test://localhost/test");
-        List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
-                .getActivateExtension(url, new String[]{}, "default_group");
+        List<ActivateExt1> list = loader
+                // .getActivateExtension(url, new String[]{}, "default_group");
+                .getActivateExtension(url, new String[]{"group1","group2","default","group3"}, "default_group");
         Assert.assertEquals(1, list.size());
         Assert.assertTrue(list.get(0).getClass() == ActivateExt1Impl1.class);
 
+        final List<ActivateExt1> group = loader.getActivateExtension(url, "group");
+        loader.getActivateExtension(url, new String[]{});
+
         // test group
         url = url.addParameter(Constants.GROUP_KEY, "group1");
-        list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
+        list = loader
                 .getActivateExtension(url, new String[]{}, "group1");
         Assert.assertEquals(1, list.size());
         Assert.assertTrue(list.get(0).getClass() == GroupActivateExtImpl.class);
@@ -385,7 +396,7 @@ public class ExtensionLoaderTest {
         url = url.removeParameter(Constants.GROUP_KEY);
         url = url.addParameter(Constants.GROUP_KEY, "value");
         url = url.addParameter("value", "value");
-        list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
+        list = loader
                 .getActivateExtension(url, new String[]{}, "value");
         Assert.assertEquals(1, list.size());
         Assert.assertTrue(list.get(0).getClass() == ValueActivateExtImpl.class);
@@ -393,7 +404,7 @@ public class ExtensionLoaderTest {
         // test order
         url = URL.valueOf("test://localhost/test");
         url = url.addParameter(Constants.GROUP_KEY, "order");
-        list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
+        list = loader
                 .getActivateExtension(url, new String[]{}, "order");
         Assert.assertEquals(2, list.size());
         Assert.assertTrue(list.get(0).getClass() == OrderActivateExtImpl1.class);
@@ -402,8 +413,15 @@ public class ExtensionLoaderTest {
 
     @Test
     public void testLoadDefaultActivateExtension() throws Exception {
+        /**
+         * default 指定的 group 中符合条件的代表所有激活的自激活拓展类
+         * default 在 value 数组中的位置，就代表了自激活拓展类在获取的所有的拓展类列表的相对位置
+         * 如果某个自激活拓展类的 name 在 value 数组中显示的指定了, 则 default 代表的自激活拓展类里面不再包含该类
+         * 该类的位置按照显示指定的位置进行排列和获取
+         */
         // test default
         URL url = URL.valueOf("test://localhost/test?ext=order1,default");
+        // URL url = URL.valueOf("test://localhost/test?ext=activateext1impl1,order1,default,activateext1impl2");
         List<ActivateExt1> list = ExtensionLoader.getExtensionLoader(ActivateExt1.class)
                 .getActivateExtension(url, "ext", "default_group");
         Assert.assertEquals(2, list.size());

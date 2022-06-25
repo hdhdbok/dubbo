@@ -38,11 +38,16 @@ import java.util.Set;
 public class SpringExtensionFactory implements ExtensionFactory {
     private static final Logger logger = LoggerFactory.getLogger(SpringExtensionFactory.class);
 
+    // 能自动去重的 Set 保存 Spring 上下文
     private static final Set<ApplicationContext> contexts = new ConcurrentHashSet<ApplicationContext>();
 
     private static final ApplicationListener shutdownHookListener = new ShutdownHookListener();
 
+    // 此方法有两处调用
+    // 在 ReferenceBean 和 ServiceBean 中会调用静态方法保存Spring上下文，
+    // 即一个服务被发布或被引用的时候，对应的 Spring 上下文会被保存下来。
     public static void addApplicationContext(ApplicationContext context) {
+        // Spring 的上下文引用会在这里保存
         contexts.add(context);
         BeanFactoryUtils.addApplicationListener(context, shutdownHookListener);
     }
@@ -63,10 +68,12 @@ public class SpringExtensionFactory implements ExtensionFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getExtension(Class<T> type, String name) {
+        // 遍历所有 Spring 上下文，先根据名字从 Spring 容器中查找扩展类
         for (ApplicationContext context : contexts) {
             if (context.containsBean(name)) {
                 Object bean = context.getBean(name);
                 if (type.isInstance(bean)) {
+                    // 根据 name 找到的话就直接返回
                     return (T) bean;
                 }
             }
@@ -80,6 +87,7 @@ public class SpringExtensionFactory implements ExtensionFactory {
 
         for (ApplicationContext context : contexts) {
             try {
+                // 很具类型（type）查找
                 return context.getBean(type);
             } catch (NoUniqueBeanDefinitionException multiBeanExe) {
                 logger.warn("Find more than 1 spring extensions (beans) of type " + type.getName() + ", will stop auto injection. Please make sure you have specified the concrete parameter type and there's only one extension of that type.");
@@ -92,6 +100,7 @@ public class SpringExtensionFactory implements ExtensionFactory {
 
         logger.warn("No spring extension (bean) named:" + name + ", type:" + type.getName() + " found, stop get bean.");
 
+        // 根据类型也找不到，只能返回 null 了
         return null;
     }
 

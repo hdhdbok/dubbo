@@ -37,6 +37,7 @@ public @interface Adaptive {
     /**
      * Decide which target extension to be injected. The name of the target extension is decided by the parameter passed
      * in the URL, and the parameter names are given by this method.
+     * 决定要注入的目标扩展类。目标扩展名由URL中传入的参数决定，参数名由该方法给出。
      * <p>
      * If the specified parameters are not found from {@link URL}, then the default extension will be used for
      * dependency injection (specified in its interface's {@link SPI}).

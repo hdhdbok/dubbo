@@ -97,6 +97,12 @@ public class ExtensionLoader_Adaptive_Test {
     public void test_getAdaptiveExtension_protocolKey() throws Exception {
         UseProtocolKeyExt ext = ExtensionLoader.getExtensionLoader(UseProtocolKeyExt.class).getAdaptiveExtension();
 
+        /**
+         * @see ExtensionLoader#createAdaptiveExtensionClassCode()
+         * 这个方法中有对 protocol 关键字的处理:
+         *  如果 @Adaptive 注解中指定的 key 值包含 protocol 关键字，则通过 url.getProtocol() 获取 name
+         *  如果是普通的 key 值，直接通过 url.getParameter("key") 获取 name
+         */
         {
             String echo = ext.echo(URL.valueOf("1.2.3.4:20880"), "s");
             assertEquals("Ext3Impl1-echo", echo); // default value
@@ -117,6 +123,7 @@ public class ExtensionLoader_Adaptive_Test {
             Map<String, String> map = new HashMap<String, String>();
             URL url = new URL(null, "1.2.3.4", 1010, "path1", map);
             String yell = ext.yell(url, "s");
+            // protocol 和 key 都未指定时，走默认值
             assertEquals("Ext3Impl1-yell", yell); // default value
 
             url = url.addParameter("key2", "impl2"); // use 2nd key, key2
@@ -315,7 +322,9 @@ public class ExtensionLoader_Adaptive_Test {
 
     @Test
     public void test_getAdaptiveExtension_InjectNotExtFail() throws Exception {
-        Ext6 ext = ExtensionLoader.getExtensionLoader(Ext6.class).getExtension("impl2");
+        final ExtensionLoader<Ext6> loader = ExtensionLoader.getExtensionLoader(Ext6.class);
+        Ext6 impl1 = loader.getExtension("impl1");
+        Ext6 ext = loader.getExtension("impl2");
 
         Ext6Impl2 impl = (Ext6Impl2) ext;
         assertNull(impl.getList());

@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marker for extension interface
+ * 扩展接口的标记
  * <p/>
  * Changes on extension configuration file <br/>
  * Use <code>Protocol</code> as an example, its configuration file 'META-INF/dubbo/com.xxx.Protocol' is changes from: <br/>

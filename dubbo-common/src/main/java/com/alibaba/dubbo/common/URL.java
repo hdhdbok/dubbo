@@ -1134,8 +1134,13 @@ public final class URL implements Serializable {
         return buf.toString();
     }
 
+    /**
+     * 追加的参数格式: ?key1=value1&key2=value2
+     */
     private void buildParameters(StringBuilder buf, boolean concat, String[] parameters) {
+        // 如果URL中没有参数，则直接结束
         if (getParameters() != null && getParameters().size() > 0) {
+            // 入参 parameters: 传入的指定的要拼接进去的 URL 参数的 key
             List<String> includes = (parameters == null || parameters.length == 0 ? null : Arrays.asList(parameters));
             boolean first = true;
             for (Map.Entry<String, String> entry : new TreeMap<String, String>(getParameters()).entrySet()) {
@@ -1161,6 +1166,10 @@ public final class URL implements Serializable {
         return buildString(appendUser, appendParameter, false, false, parameters);
     }
 
+    /**
+     * [${protocol}]://[${username[:password]@]}]${host}[:${port}]/${path}
+     * ${protocol}://${username:password@${host}:${port}/${path}?key1=value1&key2=value2
+     */
     private String buildString(boolean appendUser, boolean appendParameter, boolean useIP, boolean useService, String... parameters) {
         StringBuilder buf = new StringBuilder();
         if (protocol != null && protocol.length() > 0) {
@@ -1198,6 +1207,7 @@ public final class URL implements Serializable {
             buf.append("/");
             buf.append(path);
         }
+        // 当需要追加参数的时候才做追加参数操作
         if (appendParameter) {
             buildParameters(buf, true, parameters);
         }
