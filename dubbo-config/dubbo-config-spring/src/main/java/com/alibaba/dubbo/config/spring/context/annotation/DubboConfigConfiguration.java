@@ -43,6 +43,12 @@ import org.springframework.context.annotation.Configuration;
  * @since 2.5.8
  */
 public class DubboConfigConfiguration {
+    /*
+     * DubboConfigConfiguration 里面标注了 @EnableDubboConfigBindings,
+     * @EnableDubboConfigBindings 同样指定了 @Import(DubboConfigBindingsRegistrar.class)。
+     * 因为 @EnableDubboConfigBindings 允许指定多个 @EnableDubboConfigBinding 注解,
+     * Dubbo会根据用户配置属性自动填充这些承载的对象
+     */
 
     /**
      * Single Dubbo {@link AbstractConfig Config} Bean Binding

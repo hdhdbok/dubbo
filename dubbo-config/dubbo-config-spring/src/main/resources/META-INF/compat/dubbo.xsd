@@ -11,7 +11,8 @@
 
     <xsd:annotation>
         <xsd:documentation>
-            <![CDATA[ Namespace support for the dubbo services provided by dubbo framework. ]]></xsd:documentation>
+            <![CDATA[ Namespace support for the dubbo services provided by dubbo framework. ]]>
+        </xsd:documentation>
     </xsd:annotation>
 
     <xsd:complexType name="abstractMethodType">

@@ -29,6 +29,11 @@ import com.alibaba.dubbo.rpc.RpcResult;
 
 import java.io.IOException;
 
+/**
+ * DubboCountCodec: 因为流中可能包含多个RPC请求，Dubbo 框架尝试一次性读取更多完整报文编解码生成对象
+ * 它的实现思想比较简单，依次调用 DubboCodec 去解码，如果能解码成完整报文，则加入消息列表，然后触发下一个Handler方法
+ * 调用。
+ */
 public final class DubboCountCodec implements Codec2 {
 
     private DubboCodec codec = new DubboCodec();

@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * TelnetCodec
+ * TelnetCodec: Telnet 实现复用了 Dubbo 协议端口，其实就是在这层编解码做了通用处理。
  */
 public class TelnetCodec extends TransportCodec {
 

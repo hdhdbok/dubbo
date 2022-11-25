@@ -95,7 +95,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
                 return registry;
             }
             // 如果注册中心还没创建过，则调用抽象方法 createRegistry(url)重新创建一个
-            // createRegistry 方法由具体的子类实现
+            // createRegistry 方法由具体的子类实现, 具体使用那个实现类，依旧是通过 url 中的 protocol 来判定的
             registry = createRegistry(url);
             if (registry == null) {
                 throw new IllegalStateException("Can not create registry " + url);

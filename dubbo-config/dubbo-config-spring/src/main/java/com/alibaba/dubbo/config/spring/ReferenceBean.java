@@ -174,6 +174,7 @@ public class ReferenceBean<T> extends ReferenceConfig<T> implements FactoryBean,
             b = getConsumer().isInit();
         }
         if (b != null && b.booleanValue()) {
+            // 设置字段值的时候仅调用referenceBean.getObject()获取远程代理即可
             getObject();
         }
     }

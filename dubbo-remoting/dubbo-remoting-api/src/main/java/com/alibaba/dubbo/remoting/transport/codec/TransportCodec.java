@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * TransportCodec
+ * TransportCodec: 主要抽象编解码实现，自动帮我们去调用序列化、反序列实现和自动cleanup流。
  */
 public class TransportCodec extends AbstractCodec {
 

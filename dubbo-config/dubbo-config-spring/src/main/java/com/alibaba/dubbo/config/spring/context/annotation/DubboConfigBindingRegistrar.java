@@ -70,6 +70,11 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
 
     }
 
+    /**
+     * 注册 bean 到容器，大概做了两件事
+     * 1. 如果用户配置了属性，比如 dubbo.application.name, 则会自动创建对应 Spring Bean 到容器。
+     * 2. 注册和配置对象 Bean 属性绑定处理器 DubboConfigBindingBeanPostProcessor, 委托 Spring 做属性值绑定。
+     */
     protected void registerBeanDefinitions(AnnotationAttributes attributes, BeanDefinitionRegistry registry) {
 
         String prefix = environment.resolvePlaceholders(attributes.getString("prefix"));
@@ -100,10 +105,11 @@ public class DubboConfigBindingRegistrar implements ImportBeanDefinitionRegistra
         Set<String> beanNames = multiple ? resolveMultipleBeanNames(properties) :
                 Collections.singleton(resolveSingleBeanName(properties, configClass, registry));
 
+        // 注册和配置对象 Bean 属性绑定处理器 DubboConfigBindingBeanPostProcessor, 委托Spring做属性值绑定。
         for (String beanName : beanNames) {
-
+            // 构建beanDefinition信息，注册到容器
             registerDubboConfigBean(beanName, configClass, registry);
-
+            // 将配置类的后置处理器注册到容器
             registerDubboConfigBindingBeanPostProcessor(prefix, beanName, multiple, registry);
 
         }

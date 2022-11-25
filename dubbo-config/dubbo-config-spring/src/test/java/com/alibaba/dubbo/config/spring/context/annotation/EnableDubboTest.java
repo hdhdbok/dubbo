@@ -62,11 +62,8 @@ public class EnableDubboTest {
     public void test() {
 
         DemoService demoService = providerContext.getBean(DemoService.class);
-
         String value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
-
         Class<?> beanClass = AopUtils.getTargetClass(demoService);
 
         // DemoServiceImpl with @Transactional
@@ -74,47 +71,29 @@ public class EnableDubboTest {
 
         // Test @Transactional is present or not
         Assert.assertNotNull(findAnnotation(beanClass, Transactional.class));
-
         AnnotationConfigApplicationContext consumerContext = new AnnotationConfigApplicationContext(TestConsumerConfiguration.class);
-
         TestConsumerConfiguration consumerConfiguration = consumerContext.getBean(TestConsumerConfiguration.class);
-
         demoService = consumerConfiguration.getDemoService();
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
-
         TestConsumerConfiguration.Child child = consumerContext.getBean(TestConsumerConfiguration.Child.class);
 
         // From Child
-
         demoService = child.getDemoServiceFromChild();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         // From Parent
-
         demoService = child.getDemoServiceFromParent();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         // From Ancestor
-
         demoService = child.getDemoServiceFromAncestor();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         // Test dubbo-annotation-consumer2 bean presentation

@@ -48,6 +48,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     private final static String DEFAULT_ROOT = "dubbo";
 
+    // 默认：/dubbo
     private final String root;
 
     private final Set<String> anyServices = new ConcurrentHashSet<String>();
@@ -61,7 +62,9 @@ public class ZookeeperRegistry extends FailbackRegistry {
         if (url.isAnyHost()) {
             throw new IllegalStateException("registry address == null");
         }
+        // 获取 group 信息，默认 dubbo
         String group = url.getParameter(Constants.GROUP_KEY, DEFAULT_ROOT);
+        // group 信息要以 / 开头
         if (!group.startsWith(Constants.PATH_SEPARATOR)) {
             group = Constants.PATH_SEPARATOR + group;
         }
@@ -112,6 +115,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     protected void doRegister(URL url) {
         try {
+            // 创建url, 路径都是持久化节点, 只有最后一级是临时节点
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -235,6 +239,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
         }
         try {
             List<String> providers = new ArrayList<String>();
+            // 获取url的子节点
             for (String path : toCategoriesPath(url)) {
                 List<String> children = zkClient.getChildren(path);
                 if (children != null) {
@@ -258,6 +263,9 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return root;
     }
 
+    /**
+     * 服务路径 /${root}/${interface | path}
+     */
     private String toServicePath(URL url) {
         String name = url.getServiceInterface();
         if (Constants.ANY_VALUE.equals(name)) {
@@ -266,6 +274,14 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return toRootDir() + URL.encode(name);
     }
 
+    /**
+     * 获取类别信息
+     * 如果 category=* 则返回全部的四种类别
+     * 如果 category=xxx 则返回配置的类别
+     * 如果没有配置 category，则返回默认类别 providers
+     *
+     * 最终结果：/${root}/${interface | path}/${category}
+     */
     private String[] toCategoriesPath(URL url) {
         String[] categories;
         if (Constants.ANY_VALUE.equals(url.getParameter(Constants.CATEGORY_KEY))) {
@@ -291,9 +307,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
 
     private List<URL> toUrlsWithoutEmpty(URL consumer, List<String> providers) {
         List<URL> urls = new ArrayList<URL>();
+        // 服务提供节点不能为空
         if (providers != null && !providers.isEmpty()) {
             for (String provider : providers) {
                 provider = URL.decode(provider);
+                // 节点url中要包含 ://
                 if (provider.contains("://")) {
                     URL url = URL.valueOf(provider);
                     if (UrlUtils.isMatch(consumer, url)) {

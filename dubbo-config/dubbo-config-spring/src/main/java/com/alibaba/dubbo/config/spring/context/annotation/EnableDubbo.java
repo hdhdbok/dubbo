@@ -71,6 +71,7 @@ public @interface EnableDubbo {
 
     /**
      * It indicates whether {@link AbstractConfig} binding to multiple Spring Beans.
+     * 它指示 {@link AbstractConfig} 是否绑定到多个 Spring Bean。
      *
      * @return the default value is <code>false</code>
      * @see EnableDubboConfig#multiple()

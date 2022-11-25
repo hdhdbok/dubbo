@@ -39,10 +39,7 @@ import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.AnnotationBeanNameGenerator;
-import org.springframework.context.annotation.AnnotationConfigUtils;
-import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
-import org.springframework.context.annotation.ConfigurationClassPostProcessor;
+import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
@@ -101,9 +98,13 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 
+        // 获取用户注解配置的包进行扫描
+        // Dubbo 框架首先会提取用户配置的扫描包名称，因为包名可能使用${...}占位符，因此框架会调用 Spring 的占位符解析做进一步解码
         Set<String> resolvedPackagesToScan = resolvePackagesToScan(packagesToScan);
 
         if (!CollectionUtils.isEmpty(resolvedPackagesToScan)) {
+            // 触发 ServiceBean 定义和注入
+            // 开始真正的注解扫描，委托 Spring 对所有符合包名的 .class 文件做字节码分析
             registerServiceBeans(resolvedPackagesToScan, registry);
         } else {
             if (logger.isWarnEnabled()) {
@@ -125,24 +126,31 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         DubboClassPathBeanDefinitionScanner scanner =
                 new DubboClassPathBeanDefinitionScanner(registry, environment, resourceLoader);
 
+        // 获取beanName生成器
         BeanNameGenerator beanNameGenerator = resolveBeanNameGenerator(registry);
 
         scanner.setBeanNameGenerator(beanNameGenerator);
 
+        // 指定扫描 dubbo 的注解 @Service,不会扫描 Spring 的 @Service 注解
         scanner.addIncludeFilter(new AnnotationTypeFilter(Service.class));
 
         for (String packageToScan : packagesToScan) {
 
-            // Registers @Service Bean first
+            // Registers @Service Bean first: 将 @Service 作为不同 Bean 注入容器
+            // 将 @Service 标注的服务提升为不同的 Bean, 这里并没有设置beanClass
             scanner.scan(packageToScan);
 
             // Finds all BeanDefinitionHolders of @Service whether @ComponentScan scans or not.
+            // 对扫描的服务创建 BeanDefinitionHolder,用于生成 ServiceBean 定义
+            // 根据注册的普通 Bean 生成 ServiceBean 的占位符，用于后面的属性注入逻辑
             Set<BeanDefinitionHolder> beanDefinitionHolders =
                     findServiceBeanDefinitionHolders(scanner, packageToScan, registry, beanNameGenerator);
 
             if (!CollectionUtils.isEmpty(beanDefinitionHolders)) {
 
                 for (BeanDefinitionHolder beanDefinitionHolder : beanDefinitionHolders) {
+                    // 注册ServiceBean定义并做数据绑定和解析
+                    // 提取普通 Bean 上标注的 Service 注解生成新的 RootBeanDefinition, 用于 Spring 启动后的服务暴露
                     registerServiceBean(beanDefinitionHolder, registry, scanner);
                 }
 
@@ -261,6 +269,7 @@ public class ServiceAnnotationBeanPostProcessor implements BeanDefinitionRegistr
         // ServiceBean Bean name
         String beanName = generateServiceBeanName(service, interfaceClass, annotatedServiceBeanName);
 
+        // 检查当前bean是否可以注册（已经注册过的返回true，否则返回false）
         if (scanner.checkCandidate(beanName, serviceBeanDefinition)) { // check duplicated candidate bean
             registry.registerBeanDefinition(beanName, serviceBeanDefinition);
 

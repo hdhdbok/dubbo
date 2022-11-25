@@ -44,6 +44,8 @@ public class RegistryConfigTest {
         RegistryConfig registry = new RegistryConfig();
         registry.setAddress("localhost");
         assertThat(registry.getAddress(), equalTo("localhost"));
+
+        // getAddress() 方法有@Parameter(excluded=true)注解, 表示追加参数的时候会跳过这个属性
         Map<String, String> parameters = new HashMap<String, String>();
         RegistryConfig.appendParameters(parameters, registry);
         assertThat(parameters, not(hasKey("address")));
@@ -161,6 +163,7 @@ public class RegistryConfigTest {
         RegistryConfig registry = new RegistryConfig();
         registry.setParameters(Collections.singletonMap("k1", "v1"));
         assertThat(registry.getParameters(), hasEntry("k1", "v1"));
+
         Map<String, String> parameters = new HashMap<String, String>();
         RegistryConfig.appendParameters(parameters, registry);
         assertThat(parameters, hasEntry("k1", "v1"));

@@ -56,8 +56,7 @@ public class ReferenceConfigTest {
         try {
             demoService.export();
             rc.get();
-            Assert.assertTrue(!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(
-                    rc.getInvoker().getUrl().getProtocol()));
+            Assert.assertTrue(!Constants.LOCAL_PROTOCOL.equalsIgnoreCase(rc.getInvoker().getUrl().getProtocol()));
         } finally {
             demoService.unexport();
         }
@@ -67,6 +66,8 @@ public class ReferenceConfigTest {
     public void testConstructWithReferenceAnnotation() throws NoSuchFieldException {
         Reference reference = getClass().getDeclaredField("innerTest").getAnnotation(Reference.class);
         ReferenceConfig referenceConfig = new ReferenceConfig(reference);
+        Assert.assertEquals(referenceConfig.getLoadbalance(), "random");
+
         Assert.assertTrue(referenceConfig.getMethods().size() == 1);
         Assert.assertEquals(((MethodConfig) referenceConfig.getMethods().get(0)).getName(), "sayHello");
         Assert.assertTrue(((MethodConfig) referenceConfig.getMethods().get(0)).getTimeout() == 1300);
@@ -82,9 +83,16 @@ public class ReferenceConfigTest {
     }
 
 
-    @Reference(methods = {@Method(name = "sayHello", timeout = 1300, retries = 4, loadbalance = "random", async = true,
-            actives = 3, executes = 5, deprecated = true, sticky = true, oninvoke = "i", onthrow = "t", onreturn = "r", cache = "c", validation = "v",
-            arguments = {@Argument(index = 24, callback = true, type = "sss")})})
+    @Reference(
+            loadbalance = "random",
+            methods = {
+                    @Method(name = "sayHello", timeout = 1300, retries = 4, loadbalance = "random", async = true,
+                            actives = 3, executes = 5, deprecated = true, sticky = true, oninvoke = "i", onthrow = "t",
+                            onreturn = "r", cache = "c", validation = "v",
+                            arguments = {
+                                    @Argument(index = 24, callback = true, type = "sss")
+                            })
+            })
     private InnerTest innerTest;
 
     private class InnerTest {

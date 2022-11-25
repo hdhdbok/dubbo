@@ -72,7 +72,7 @@ public abstract class AbstractConfig implements Serializable {
         legacyProperties.put("dubbo.consumer.check", "dubbo.service.allow.no.provider");
         legacyProperties.put("dubbo.service.url", "dubbo.service.address");
 
-        // this is only for compatibility
+        // this is only for compatibility: 这只是为了兼容性
         Runtime.getRuntime().addShutdownHook(DubboShutdownHook.getDubboShutdownHook());
     }
 
@@ -89,6 +89,9 @@ public abstract class AbstractConfig implements Serializable {
         return value;
     }
 
+    /**
+     * 主要处理思路就是遍历服务的所有方法，如果没有值则尝试从 -D选项中读取，如果还没有则自动从配置文件dubbo.properties中读取。
+     */
     protected static void appendProperties(AbstractConfig config) {
         if (config == null) {
             return;
@@ -408,6 +411,7 @@ public abstract class AbstractConfig implements Serializable {
         this.id = id;
     }
 
+    // 将注解类中设置的属性值，设置到对应的注解配置类中去
     protected void appendAnnotation(Class<?> annotationClass, Object annotation) {
         Method[] methods = annotationClass.getMethods();
         for (Method method : methods) {
@@ -422,6 +426,7 @@ public abstract class AbstractConfig implements Serializable {
                         property = "interface";
                     }
                     String setter = "set" + property.substring(0, 1).toUpperCase() + property.substring(1);
+                    // 1. 先通过执行注解类中定义的方法，获取到配置的属性值
                     Object value = method.invoke(annotation);
                     if (!isAnnotationArray(method.getReturnType()) &&  value != null && !value.equals(method.getDefaultValue())) {
                         Class<?> parameterType = ReflectUtils.getBoxedClass(method.getReturnType());
@@ -433,6 +438,7 @@ public abstract class AbstractConfig implements Serializable {
                             value = CollectionUtils.toStringMap((String[]) value);
                         }
                         try {
+                            // 2. 执行 setter 方法, 将注解中配置的属性值，设置到注解配置类中去
                             Method setterMethod = getClass().getMethod(setter, parameterType);
                             setterMethod.invoke(this, value);
                         } catch (NoSuchMethodException e) {
@@ -447,6 +453,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     boolean isAnnotationArray(Class target) {
+        // 目标对象是数组，并且其中的元素注解类型的
         if (target.isArray() && target.getComponentType().isAnnotation()) {
             return true;
         }

@@ -38,6 +38,7 @@ public class JdkProxyFactory extends AbstractProxyFactory {
 
     @Override
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
+        // JDK 动态代理方式不需要生成对应的 wrapper 类，直接通过反射进行调用
         return new AbstractProxyInvoker<T>(proxy, type, url) {
             @Override
             protected Object doInvoke(T proxy, String methodName,

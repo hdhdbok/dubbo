@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  * ClusterUtils
- *
+ * 一般不允许透传的属性都会在 ClusterUtils#mergellrl 中进行特殊处理。
  */
 public class ClusterUtils {
 

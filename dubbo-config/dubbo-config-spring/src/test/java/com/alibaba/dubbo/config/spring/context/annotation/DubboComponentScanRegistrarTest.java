@@ -40,95 +40,65 @@ public class DubboComponentScanRegistrarTest {
     public void test() {
 
         AnnotationConfigApplicationContext providerContext = new AnnotationConfigApplicationContext();
-
         providerContext.register(ProviderConfiguration.class);
-
         providerContext.refresh();
 
         DemoService demoService = providerContext.getBean(DemoService.class);
-
         String value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         Class<?> beanClass = AopUtils.getTargetClass(demoService);
-
         // DemoServiceImpl with @Transactional
         Assert.assertEquals(DemoServiceImpl.class, beanClass);
-
         // Test @Transactional is present or not
         Assert.assertNotNull(findAnnotation(beanClass, Transactional.class));
 
         AnnotationConfigApplicationContext consumerContext = new AnnotationConfigApplicationContext();
-
         consumerContext.register(ConsumerConfiguration.class);
-
         consumerContext.refresh();
 
         ConsumerConfiguration consumerConfiguration = consumerContext.getBean(ConsumerConfiguration.class);
-
         demoService = consumerConfiguration.getDemoService();
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         ConsumerConfiguration.Child child = consumerContext.getBean(ConsumerConfiguration.Child.class);
 
         // From Child
-
         demoService = child.getDemoServiceFromChild();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         // From Parent
-
         demoService = child.getDemoServiceFromParent();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         // From Ancestor
-
         demoService = child.getDemoServiceFromAncestor();
-
         Assert.assertNotNull(demoService);
-
         value = demoService.sayName("Mercy");
-
         Assert.assertEquals("Hello,Mercy", value);
 
         providerContext.close();
         consumerContext.close();
-
-
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testOnException() {
 
         AnnotationConfigApplicationContext providerContext = new AnnotationConfigApplicationContext();
-
         providerContext.register(ProviderConfiguration.class);
-
         providerContext.refresh();
 
         AnnotationConfigApplicationContext consumerContext = new AnnotationConfigApplicationContext();
-
         consumerContext.register(ConsumerConfiguration.class);
-
         consumerContext.refresh();
 
-        ConsumerConfiguration.Child child = consumerContext.getBean(ConsumerConfiguration.Child.class);
-
         // From Child
+        ConsumerConfiguration.Child child = consumerContext.getBean(ConsumerConfiguration.Child.class);
         DemoService demoService = child.getDemoServiceFromChild();
 
         demoService.getBox();

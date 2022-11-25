@@ -31,13 +31,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 /**
- * AbstractCodec
+ * AbstractCodec: 主要提供基础能力，比如校验报文长度和查找具体编解码器等
  */
 public abstract class AbstractCodec implements Codec2 {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractCodec.class);
 
     protected static void checkPayload(Channel channel, long size) throws IOException {
+        // 默认消息体大小: 8M
         int payload = Constants.DEFAULT_PAYLOAD;
         if (channel != null && channel.getUrl() != null) {
             payload = channel.getUrl().getParameter(Constants.PAYLOAD_KEY, Constants.DEFAULT_PAYLOAD);

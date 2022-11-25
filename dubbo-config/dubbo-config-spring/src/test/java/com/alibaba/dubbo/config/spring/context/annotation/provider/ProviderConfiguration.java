@@ -30,6 +30,7 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+// 如果不指定任何扫描信息，默认扫描 被注解类 所属的包（即当前类 ProviderConfiguration 所在的包 ）
 @DubboComponentScan(basePackages = "com.alibaba.dubbo.config.spring.context.annotation.provider")
 @PropertySource("META-INF/default.properties")
 @EnableTransactionManagement

@@ -263,11 +263,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
         if (interfaceClass == null) {
             throw new IllegalStateException("interface not allow null!");
         }
-        // to verify interfaceClass is an interface
+        // to verify interfaceClass is an interface: 验证 interfaceClass 是一个接口
         if (!interfaceClass.isInterface()) {
             throw new IllegalStateException("The interface class " + interfaceClass + " is not a interface!");
         }
-        // check if methods exist in the interface
+        // check if methods exist in the interface: 检查接口中是否存在方法
         if (methods != null && !methods.isEmpty()) {
             for (MethodConfig methodBean : methods) {
                 String methodName = methodBean.getName();

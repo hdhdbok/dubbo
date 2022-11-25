@@ -353,16 +353,22 @@ public class UrlUtils {
         }
     }
 
+    /**
+     * 判断消费者URL和提供者URL是否匹配
+     */
     public static boolean isMatch(URL consumerUrl, URL providerUrl) {
         String consumerInterface = consumerUrl.getServiceInterface();
         String providerInterface = providerUrl.getServiceInterface();
+        // 消费值url的 interface=* 或者消费者url和提供者url的 interface 一样时 符合匹配规则
         if (!(Constants.ANY_VALUE.equals(consumerInterface) || StringUtils.isEquals(consumerInterface, providerInterface)))
             return false;
 
+        // 判断消费者和生产者的 category 是否一样
         if (!isMatchCategory(providerUrl.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY),
                 consumerUrl.getParameter(Constants.CATEGORY_KEY, Constants.DEFAULT_CATEGORY))) {
             return false;
         }
+        // 判断生产者是否是 enable 状态，
         if (!providerUrl.getParameter(Constants.ENABLED_KEY, true)
                 && !Constants.ANY_VALUE.equals(consumerUrl.getParameter(Constants.ENABLED_KEY))) {
             return false;
@@ -375,6 +381,7 @@ public class UrlUtils {
         String providerGroup = providerUrl.getParameter(Constants.GROUP_KEY);
         String providerVersion = providerUrl.getParameter(Constants.VERSION_KEY);
         String providerClassifier = providerUrl.getParameter(Constants.CLASSIFIER_KEY, Constants.ANY_VALUE);
+        // 判断消费者和生产者的 group version classifier 是否一致
         return (Constants.ANY_VALUE.equals(consumerGroup) || StringUtils.isEquals(consumerGroup, providerGroup) || StringUtils.isContains(consumerGroup, providerGroup))
                 && (Constants.ANY_VALUE.equals(consumerVersion) || StringUtils.isEquals(consumerVersion, providerVersion))
                 && (consumerClassifier == null || Constants.ANY_VALUE.equals(consumerClassifier) || StringUtils.isEquals(consumerClassifier, providerClassifier));

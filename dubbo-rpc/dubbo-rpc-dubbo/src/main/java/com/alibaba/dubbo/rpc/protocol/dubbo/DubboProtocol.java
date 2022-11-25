@@ -76,8 +76,9 @@ public class DubboProtocol extends AbstractProtocol {
         public Object reply(ExchangeChannel channel, Object message) throws RemotingException {
             if (message instanceof Invocation) {
                 Invocation inv = (Invocation) message;
+                // 查找 Invocation 关联的 Invoker
                 Invoker<?> invoker = getInvoker(channel, inv);
-                // need to consider backward-compatibility if it's a callback
+                // need to consider backward-compatibility if it's a callback: 如果是回调，则需要考虑向后兼容性
                 if (Boolean.TRUE.toString().equals(inv.getAttachments().get(IS_CALLBACK_SERVICE_INVOKE))) {
                     String methodsStr = invoker.getUrl().getParameters().get("methods");
                     boolean hasMethod = false;
@@ -101,6 +102,7 @@ public class DubboProtocol extends AbstractProtocol {
                     }
                 }
                 RpcContext.getContext().setRemoteAddress(channel.getRemoteAddress());
+                // 调用业务方具体方法
                 return invoker.invoke(inv);
             }
             throw new RemotingException(channel, "Unsupported request: "
@@ -192,7 +194,9 @@ public class DubboProtocol extends AbstractProtocol {
     Invoker<?> getInvoker(Channel channel, Invocation inv) throws RemotingException {
         boolean isCallBackServiceInvoke = false;
         boolean isStubServiceInvoke = false;
+        // 获取服务暴露协议的端口
         int port = channel.getLocalAddress().getPort();
+        // 获取调用传递的接口
         String path = inv.getAttachments().get(Constants.PATH_KEY);
         // if it's callback service on client side
         isStubServiceInvoke = Boolean.TRUE.toString().equals(inv.getAttachments().get(Constants.STUB_EVENT_KEY));
@@ -205,8 +209,10 @@ public class DubboProtocol extends AbstractProtocol {
             path = inv.getAttachments().get(Constants.PATH_KEY) + "." + inv.getAttachments().get(Constants.CALLBACK_SERVICE_KEY);
             inv.getAttachments().put(IS_CALLBACK_SERVICE_INVOKE, Boolean.TRUE.toString());
         }
+        // 根据端口、接口名、接口版本和接口分组构造唯一key
         String serviceKey = serviceKey(port, path, inv.getAttachments().get(Constants.VERSION_KEY), inv.getAttachments().get(Constants.GROUP_KEY));
 
+        // 从 HashMap 中获取 Exporter
         DubboExporter<?> exporter = (DubboExporter<?>) exporterMap.get(serviceKey);
 
         if (exporter == null)
@@ -229,8 +235,10 @@ public class DubboProtocol extends AbstractProtocol {
         URL url = invoker.getUrl();
 
         // export service.
+        // 根据服务分组、版本、接口和端口构造key
         String key = serviceKey(url);
         DubboExporter<T> exporter = new DubboExporter<T>(invoker, key, exporterMap);
+        // 把 exporter 存储到单例 DubboProtocol 中
         exporterMap.put(key, exporter);
 
         //export an stub service for dispatching event
@@ -248,6 +256,7 @@ public class DubboProtocol extends AbstractProtocol {
             }
         }
 
+        // 服务初次暴露会创建监听服务器
         openServer(url);
         optimizeSerialization(url);
         return exporter;
@@ -257,6 +266,7 @@ public class DubboProtocol extends AbstractProtocol {
         // find server.
         String key = url.getAddress();
         //client can export a service which's only for server to invoke
+        // 客户端可以暴露仅供服务器调用的服务
         boolean isServer = url.getParameter(Constants.IS_SERVER_KEY, true);
         if (isServer) {
             ExchangeServer server = serverMap.get(key);
@@ -282,6 +292,7 @@ public class DubboProtocol extends AbstractProtocol {
         url = url.addParameter(Constants.CODEC_KEY, DubboCodec.NAME);
         ExchangeServer server;
         try {
+            // 创建 NettyServer 并且初始化 Handler
             server = Exchangers.bind(url, requestHandler);
         } catch (RemotingException e) {
             throw new RpcException("Fail to start server(url: " + url + ") " + e.getMessage(), e);
@@ -410,10 +421,12 @@ public class DubboProtocol extends AbstractProtocol {
 
         ExchangeClient client;
         try {
+            // 如果配置了属性 lazy=true，则真实调用才会创建TCP连接
             // connection should be lazy
             if (url.getParameter(Constants.LAZY_CONNECT_KEY, false)) {
                 client = new LazyConnectExchangeClient(url, requestHandler);
             } else {
+                // 立即创建与远程的连接
                 client = Exchangers.connect(url, requestHandler);
             }
         } catch (RemotingException e) {

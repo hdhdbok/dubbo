@@ -93,15 +93,19 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
                 .deserialize(channel.getUrl(), input);
         this.put(SERIALIZATION_ID_KEY, serializationType);
 
+        // 读取框架版本
         String dubboVersion = in.readUTF();
         request.setVersion(dubboVersion);
         setAttachment(Constants.DUBBO_VERSION_KEY, dubboVersion);
 
+        // 读取调用接口
         String path = in.readUTF();
         setAttachment(Constants.PATH_KEY, path);
+        // 读取接口指定的版本, 默认为0.0.0
         String version = in.readUTF();
         setAttachment(Constants.VERSION_KEY, version);
 
+        // 读取方法名称
         setMethodName(in.readUTF());
         try {
             if (Boolean.parseBoolean(System.getProperty(SERIALIZATION_SECURITY_CHECK_KEY, "false"))) {
@@ -110,12 +114,14 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
 
             Object[] args;
             Class<?>[] pts;
+            // 读取方法参数类型
             String desc = in.readUTF();
             if (desc.length() == 0) {
                 pts = DubboCodec.EMPTY_CLASS_ARRAY;
                 args = DubboCodec.EMPTY_OBJECT_ARRAY;
             } else {
                 pts = ReflectUtils.desc2classArray(desc);
+                // 依次读取方法参数值
                 args = new Object[pts.length];
                 for (int i = 0; i < args.length; i++) {
                     try {
@@ -129,6 +135,7 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
             }
             setParameterTypes(pts);
 
+            // 读取隐式参数
             Map<String, String> map = (Map<String, String>) in.readObject(Map.class);
             if (map != null && map.size() > 0) {
                 Map<String, String> attachment = getAttachments();
@@ -138,7 +145,7 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
                 attachment.putAll(map);
                 setAttachments(attachment);
             }
-            //decode argument ,may be callback
+            //decode argument ,may be callback: 处理异步参数回调，如果有则在服务端创建 reference 代理实例
             for (int i = 0; i < args.length; i++) {
                 args[i] = decodeInvocationArgument(channel, this, pts, i, args[i]);
             }

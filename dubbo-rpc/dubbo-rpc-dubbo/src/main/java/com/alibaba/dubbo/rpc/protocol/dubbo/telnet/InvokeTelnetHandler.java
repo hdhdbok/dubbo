@@ -62,15 +62,16 @@ public class InvokeTelnetHandler implements TelnetHandler {
         if (i < 0 || !message.endsWith(")")) {
             return "Invalid parameters, format: service.method(args)";
         }
-        String method = message.substring(0, i).trim();
-        String args = message.substring(i + 1, message.length() - 1).trim();
+        String method = message.substring(0, i).trim();// 提取调用方法(由接口名.方法名组成)
+        String args = message.substring(i + 1, message.length() - 1).trim();// 提取调用方法参数值
         i = method.lastIndexOf(".");
         if (i >= 0) {
-            service = method.substring(0, i).trim();
-            method = method.substring(i + 1).trim();
+            service = method.substring(0, i).trim();// 提取方法前面的接口
+            method = method.substring(i + 1).trim();// 提取方法名称
         }
         List<Object> list;
         try {
+            // 将参数 JSON 串转换成JSON对象
             list = JSON.parseArray("[" + args + "]", Object.class);
         } catch (Throwable t) {
             return "Invalid json argument, cause: " + t.getMessage();
@@ -89,11 +90,12 @@ public class InvokeTelnetHandler implements TelnetHandler {
         } else {
             if ((StringUtils.isBlank(service))) {
                 if (exporters.size() != 1) {
-                    //no default service we should not continue
+                    //no default service we should not continue: 没有默认服务时直接结束
                     return "Failed to find service !";
                 }
             }
             for (Exporter<?> exporter : exporters) {
+                // 接口名、方法、参数值和类型作为检索方法的条件
                 if (StringUtils.isBlank(service)
                         || service.equals(exporter.getInvoker().getInterface().getSimpleName())
                         || service.equals(exporter.getInvoker().getInterface().getName())
@@ -108,7 +110,7 @@ public class InvokeTelnetHandler implements TelnetHandler {
                             if (CollectionUtils.isNotEmpty(matchMethods)) {
                                 if (matchMethods.size() == 1) {
                                     invokeMethod = matchMethods.get(0);
-                                } else { //exist overridden method
+                                } else { //exist overridden method: 存在多个重载方法，需要指定运行那个方法
                                     channel.setAttribute(INVOKE_METHOD_LIST_KEY, matchMethods);
                                     channel.setAttribute(INVOKE_MESSAGE_KEY, message);
                                     printSelectMessage(buf, matchMethods);
@@ -125,9 +127,11 @@ public class InvokeTelnetHandler implements TelnetHandler {
         if (invoker != null) {
             if (invokeMethod != null) {
                 try {
+                    // 将JSON参数值转换成Java对象值
                     Object[] array = PojoUtils.realize(list.toArray(), invokeMethod.getParameterTypes(), invokeMethod.getGenericParameterTypes());
                     RpcContext.getContext().setLocalAddress(channel.getLocalAddress()).setRemoteAddress(channel.getRemoteAddress());
                     long start = System.currentTimeMillis();
+                    // 根据查找到的 Invoker、构造 RpcInvocation 进行方法调用
                     Object result = invoker.invoke(new RpcInvocation(invokeMethod, array)).recreate();
                     long end = System.currentTimeMillis();
                     buf.append(JSON.toJSONString(result));

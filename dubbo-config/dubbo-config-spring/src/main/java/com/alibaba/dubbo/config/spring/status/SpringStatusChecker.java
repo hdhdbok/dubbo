@@ -38,6 +38,7 @@ public class SpringStatusChecker implements StatusChecker {
 
     @Override
     public Status check() {
+        // 获取第一不为 null 的上下文
         ApplicationContext context = null;
         for (ApplicationContext c : SpringExtensionFactory.getContexts()) {
             if (c != null) {
@@ -48,6 +49,7 @@ public class SpringStatusChecker implements StatusChecker {
         if (context == null) {
             return new Status(Status.Level.UNKNOWN);
         }
+        // 如果上下文是 Lifecycle 类型的，并且还在运行中，才返回 OK
         Status.Level level = Status.Level.OK;
         if (context instanceof Lifecycle) {
             if (((Lifecycle) context).isRunning()) {
@@ -58,6 +60,7 @@ public class SpringStatusChecker implements StatusChecker {
         } else {
             level = Status.Level.UNKNOWN;
         }
+        // 构建 Spring 容器的状态信息
         StringBuilder buf = new StringBuilder();
         try {
             Class<?> cls = context.getClass();

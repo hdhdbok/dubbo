@@ -64,10 +64,13 @@ public abstract class AbstractZookeeperClient<TargetChildListener> implements Zo
 
     @Override
     public void create(String path, boolean ephemeral) {
+        // 是否要创建临时节点
         if (!ephemeral) {
+            // 判断持久化节点是否包含当前url
             if(persistentExistNodePath.contains(path)){
                 return;
             }
+            // 判断当前路径是否已经存在
             if (checkExists(path)) {
                 persistentExistNodePath.add(path);
                 return;
@@ -75,14 +78,16 @@ public abstract class AbstractZookeeperClient<TargetChildListener> implements Zo
         }
         int i = path.lastIndexOf('/');
         if (i > 0) {
+            // 递归创建路径
             create(path.substring(0, i), false);
         }
         if (ephemeral) {
+            // 创建临时节点
             createEphemeral(path);
         } else {
+            // 创建持久化节点
             createPersistent(path);
             persistentExistNodePath.add(path);
-
         }
     }
 

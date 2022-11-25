@@ -40,11 +40,14 @@ public class DubboConfigConfigurationRegistrar implements ImportBeanDefinitionRe
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 
+        // 获取 @EnableDubboConfig 注解的属性值
         AnnotationAttributes attributes = AnnotationAttributes.fromMap(
                 importingClassMetadata.getAnnotationAttributes(EnableDubboConfig.class.getName()));
 
+        // 取出 multiple 属性值，用户不配置时默认为 true
         boolean multiple = attributes.getBoolean("multiple");
 
+        // 单一配置绑定
         // Single Config Bindings
         registerBeans(registry, DubboConfigConfiguration.Single.class);
 

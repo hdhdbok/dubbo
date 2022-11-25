@@ -87,7 +87,7 @@ public class SpringExtensionFactory implements ExtensionFactory {
 
         for (ApplicationContext context : contexts) {
             try {
-                // 很具类型（type）查找
+                // 根据类型（type）查找
                 return context.getBean(type);
             } catch (NoUniqueBeanDefinitionException multiBeanExe) {
                 logger.warn("Find more than 1 spring extensions (beans) of type " + type.getName() + ", will stop auto injection. Please make sure you have specified the concrete parameter type and there's only one extension of that type.");
@@ -104,13 +104,18 @@ public class SpringExtensionFactory implements ExtensionFactory {
         return null;
     }
 
+    /**
+     * 容器关闭监听器
+     */
     private static class ShutdownHookListener implements ApplicationListener {
         @Override
         public void onApplicationEvent(ApplicationEvent event) {
             if (event instanceof ContextClosedEvent) {
                 // we call it anyway since dubbo shutdown hook make sure its destroyAll() is re-entrant.
+                // 无论如何我们都调用它，因为 dubbo 服务关闭的钩子函数 destroyAll() 是可重入的。
                 // pls. note we should not remove dubbo shutdown hook when spring framework is present, this is because
                 // its shutdown hook may not be installed.
+                // 注意，当 spring 框架存在时，我们不应该删除 dubbo 的关闭钩子，这是因为 dubbo 的关闭钩子可能没有安装。
                 DubboShutdownHook shutdownHook = DubboShutdownHook.getDubboShutdownHook();
                 shutdownHook.destroyAll();
             }

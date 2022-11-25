@@ -54,8 +54,10 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Result doInvoke(Invocation invocation, final List<Invoker<T>> invokers, LoadBalance loadbalance) throws RpcException {
         List<Invoker<T>> copyinvokers = invokers;
+        // 校验
         checkInvokers(copyinvokers, invocation);
         String methodName = RpcUtils.getMethodName(invocation);
+        // 提取方法重试次数并加一。默认重试两次，再加一，总计会调用三次；要想方法不进行重试调用，可将 retries 配置为 0 或 负数
         int len = getUrl().getMethodParameter(methodName, Constants.RETRIES_KEY, Constants.DEFAULT_RETRIES) + 1;
         if (len <= 0) {
             len = 1;
@@ -65,14 +67,15 @@ public class FailoverClusterInvoker<T> extends AbstractClusterInvoker<T> {
         List<Invoker<T>> invoked = new ArrayList<Invoker<T>>(copyinvokers.size()); // invoked invokers.
         Set<String> providers = new HashSet<String>(len);
         for (int i = 0; i < len; i++) {
-            //Reselect before retry to avoid a change of candidate `invokers`.
-            //NOTE: if `invokers` changed, then `invoked` also lose accuracy.
+            //Reselect before retry to avoid a change of candidate `invokers`. 每次重试前重新选择避免候选的 invokers 数据发生变化
+            //NOTE: if `invokers` changed, then `invoked` also lose accuracy. 如果候选 invokers 发生变化，invoked 参数也会丢失准确性
             if (i > 0) {
                 checkWhetherDestroyed();
                 copyinvokers = list(invocation);
                 // check again
                 checkInvokers(copyinvokers, invocation);
             }
+            // 跟据负载均衡策略选择一个提供者进行调用。
             Invoker<T> invoker = select(loadbalance, invocation, copyinvokers, invoked);
             invoked.add(invoker);
             RpcContext.getContext().setInvokers((List) invoked);

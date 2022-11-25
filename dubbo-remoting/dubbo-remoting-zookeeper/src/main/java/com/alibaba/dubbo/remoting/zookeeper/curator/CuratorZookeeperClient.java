@@ -36,7 +36,7 @@ import org.apache.zookeeper.WatchedEvent;
 
 import java.util.Collections;
 import java.util.List;
-
+// ZK 客户端监控器
 public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatcher> {
 
     private final CuratorFramework client;
@@ -44,16 +44,20 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
     public CuratorZookeeperClient(URL url) {
         super(url);
         try {
+            // 连接超时时间，默认 5000ms
             int timeout = url.getParameter(Constants.TIMEOUT_KEY, 5000);
             CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder()
                     .connectString(url.getBackupAddress())
                     .retryPolicy(new RetryNTimes(1, 1000))
                     .connectionTimeoutMs(timeout);
+            // 获取认证信息，username & password，可为空
             String authority = url.getAuthority();
             if (authority != null && authority.length() > 0) {
+                // 如果有认证信息，则添加连接授权
                 builder = builder.authorization("digest", authority.getBytes());
             }
             client = builder.build();
+            // 添加连接状态监听器
             client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState state) {
@@ -66,6 +70,7 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
                     }
                 }
             });
+            // 开启监控
             client.start();
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);

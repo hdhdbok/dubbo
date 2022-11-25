@@ -76,11 +76,9 @@ public class EnableDubboConfigTest {
         ProviderConfig providerConfig = context.getBean(ProviderConfig.class);
         Assert.assertEquals("127.0.0.1", providerConfig.getHost());
 
-
         // consumer
         ConsumerConfig consumerConfig = context.getBean(ConsumerConfig.class);
         Assert.assertEquals("netty", consumerConfig.getClient());
-
     }
 
     @Test
@@ -116,7 +114,6 @@ public class EnableDubboConfigTest {
             ProtocolConfig protocol = entry.getValue();
             Assert.assertEquals(beanName, protocol.getName());
         }
-
     }
 
     @EnableDubboConfig

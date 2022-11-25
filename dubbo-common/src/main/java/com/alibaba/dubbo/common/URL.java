@@ -872,6 +872,7 @@ public final class URL implements Serializable {
     }
 
     public boolean isAnyHost() {
+        // 如果 host 为 0.0.0.0 或者 url 参数中包含 anyhost=true，则返回 true
         return Constants.ANYHOST_VALUE.equals(host) || getParameter(Constants.ANYHOST_KEY, false);
     }
 
@@ -1255,6 +1256,7 @@ public final class URL implements Serializable {
         return getServiceInterface();
     }
 
+    // 提供服务的接口名称，如果没有 interface=XXX 参数，则默认取 path，例如:com.alibaba.dubbo.test.injvmServie
     public String getServiceInterface() {
         return getParameter(Constants.INTERFACE_KEY, path);
     }

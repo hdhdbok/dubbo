@@ -39,45 +39,32 @@ public class DubboConfigBindingRegistrarTest {
     public void testRegisterBeanDefinitionsForSingle() {
 
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-
         context.register(TestApplicationConfig.class);
-
         context.refresh();
 
         ApplicationConfig applicationConfig = context.getBean("applicationBean", ApplicationConfig.class);
-
         Assert.assertEquals("dubbo-demo-application", applicationConfig.getName());
-
-
     }
 
     @Test
     public void testRegisterBeanDefinitionsForMultiple() {
 
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-
         context.register(TestMultipleApplicationConfig.class);
-
         context.refresh();
 
         Set<String> expectedBeanNames = new TreeSet<String>(asList("applicationBean1", "applicationBean2", "applicationBean3"));
         Set<String> actualBeanNames = new TreeSet<String>(asList(context.getBeanNamesForType(ApplicationConfig.class)));
-
         Assert.assertEquals(expectedBeanNames, actualBeanNames);
 
         ApplicationConfig applicationConfig = context.getBean("applicationBean1", ApplicationConfig.class);
-
         Assert.assertEquals("dubbo-demo-application1", applicationConfig.getName());
 
         applicationConfig = context.getBean("applicationBean2", ApplicationConfig.class);
-
         Assert.assertEquals("dubbo-demo-application2", applicationConfig.getName());
 
         applicationConfig = context.getBean("applicationBean3", ApplicationConfig.class);
-
         Assert.assertEquals("dubbo-demo-application3", applicationConfig.getName());
-
-
     }
 
     @EnableDubboConfigBinding(prefix = "${application.prefixes}", type = ApplicationConfig.class, multiple = true)
@@ -91,6 +78,4 @@ public class DubboConfigBindingRegistrarTest {
     private static class TestApplicationConfig {
 
     }
-
-
 }

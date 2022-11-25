@@ -71,6 +71,7 @@ public @interface EnableDubboConfig {
 
     /**
      * It indicates whether binding to multiple Spring Beans.
+     * 它指示是否绑定到多个 Spring Bean。
      * <p>
      * Please note that if {@link #multiple()} is <code>true</code> since 2.6.6, the multiple bean bindings will be
      * enabled, works with single bean bindings, rather than they are mutually exclusive before.

@@ -61,6 +61,9 @@ public class ConditionRouter extends AbstractRouter {
                 throw new IllegalArgumentException("Illegal route rule!");
             }
             rule = rule.replace("consumer.", "").replace("provider.", "");
+            // 以 => 为界，把规则分成两段:
+            // 前面部分为whenRule,即消费者匹配条件;
+            // 后面部分为thenRule, 即提供者地址列表的过滤条件。
             int i = rule.indexOf("=>");
             String whenRule = i < 0 ? null : rule.substring(0, i).trim();
             String thenRule = i < 0 ? rule.trim() : rule.substring(i + 2).trim();

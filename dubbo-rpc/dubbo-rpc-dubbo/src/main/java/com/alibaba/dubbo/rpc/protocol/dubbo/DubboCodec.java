@@ -65,7 +65,7 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
         // get request id.
         long id = Bytes.bytes2long(header, 4);
         if ((flag & FLAG_REQUEST) == 0) {
-            // decode response.
+            // decode response. 解码响应报文
             Response res = new Response(id);
             if ((flag & FLAG_EVENT) != 0) {
                 res.setEvent(Response.HEARTBEAT_EVENT);
@@ -112,7 +112,8 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
             }
             return res;
         } else {
-            // decode request.
+            // decode request. 解码请求报文
+            // 创建Request对象，设置请求标记id
             Request req = new Request(id);
             req.setVersion(Version.getProtocolVersion());
             req.setTwoWay((flag & FLAG_TWOWAY) != 0);
@@ -134,20 +135,22 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
                     if (channel.getUrl().getParameter(
                             Constants.DECODE_IN_IO_THREAD_KEY,
                             Constants.DEFAULT_DECODE_IN_IO_THREAD)) {
+                        // 在I/O线程中直接解码
                         inv = new DecodeableRpcInvocation(channel, req, is, proto);
                         inv.decode();
                     } else {
-                        inv = new DecodeableRpcInvocation(channel, req,
-                                new UnsafeByteArrayInputStream(readMessageData(is)), proto);
+                        // 交给Dubbo业务线程池解码，实际上不做解码，延迟到业务线程池中解码
+                        inv = new DecodeableRpcInvocation(channel, req, new UnsafeByteArrayInputStream(readMessageData(is)), proto);
                     }
                     data = inv;
                 }
+                // 将 Rpclnvocation 作为 Request 的数据域
                 req.setData(data);
             } catch (Throwable t) {
                 if (log.isWarnEnabled()) {
                     log.warn("Decode request failed: " + t.getMessage(), t);
                 }
-                // bad request
+                // bad request: 解码失败，先做标记并存储异常
                 req.setBroken(true);
                 req.setData(t);
             }
@@ -178,41 +181,46 @@ public class DubboCodec extends ExchangeCodec implements Codec2 {
     protected void encodeRequestData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
         RpcInvocation inv = (RpcInvocation) data;
 
-        out.writeUTF(version);
-        out.writeUTF(inv.getAttachment(Constants.PATH_KEY));
-        out.writeUTF(inv.getAttachment(Constants.VERSION_KEY));
+        out.writeUTF(version);// 写入框架版本
+        out.writeUTF(inv.getAttachment(Constants.PATH_KEY));// 写入调用接口
+        out.writeUTF(inv.getAttachment(Constants.VERSION_KEY));// 写入接口指定的版本，默认: 0.0.0
 
-        out.writeUTF(inv.getMethodName());
-        out.writeUTF(ReflectUtils.getDesc(inv.getParameterTypes()));
+        out.writeUTF(inv.getMethodName());// 写入方法名称
+        out.writeUTF(ReflectUtils.getDesc(inv.getParameterTypes()));// 写入方法参数类型
         Object[] args = inv.getArguments();
         if (args != null)
-            for (int i = 0; i < args.length; i++) {
+            for (int i = 0; i < args.length; i++) {// 依次写入方法参数值
                 out.writeObject(encodeInvocationArgument(channel, inv, i));
             }
-        out.writeObject(inv.getAttachments());
+        out.writeObject(inv.getAttachments());// 写入隐式参数
     }
 
     @Override
     protected void encodeResponseData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
         Result result = (Result) data;
-        // currently, the version value in Response records the version of Request
+        // currently, the version value in Response records the version of Request: 判断客户端请求的版本是否支持服务端参数返回
         boolean attach = Version.isSupportResponseAttatchment(version);
         Throwable th = result.getException();
         if (th == null) {
+            // 提取正常返回结果
             Object ret = result.getValue();
             if (ret == null) {
+                // 在编码结果前，先写一个字节标志
                 out.writeByte(attach ? RESPONSE_NULL_VALUE_WITH_ATTACHMENTS : RESPONSE_NULL_VALUE);
             } else {
+                // 写一个字节标记
                 out.writeByte(attach ? RESPONSE_VALUE_WITH_ATTACHMENTS : RESPONSE_VALUE);
+                // 写调用结果
                 out.writeObject(ret);
             }
         } else {
+            // 标记调用抛异常，并序列化异常
             out.writeByte(attach ? RESPONSE_WITH_EXCEPTION_WITH_ATTACHMENTS : RESPONSE_WITH_EXCEPTION);
             out.writeObject(th);
         }
 
         if (attach) {
-            // returns current version of Response to consumer side.
+            // returns current version of Response to consumer side. 记录服务端 Dubbo 版本，并返回服务端隐藏参数
             result.getAttachments().put(Constants.DUBBO_VERSION_KEY, Version.getProtocolVersion());
             out.writeObject(result.getAttachments());
         }

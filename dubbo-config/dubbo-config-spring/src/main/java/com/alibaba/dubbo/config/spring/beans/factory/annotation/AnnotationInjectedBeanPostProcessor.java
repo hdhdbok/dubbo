@@ -123,8 +123,10 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
     public PropertyValues postProcessPropertyValues(
             PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeanCreationException {
 
+        // 查找 Bean 所有标注了 @Reference 的字段和方法
         InjectionMetadata metadata = findInjectionMetadata(beanName, bean.getClass(), pvs);
         try {
+            // 对字段、方法进行反射绑定
             metadata.inject(bean, beanName, pvs);
         } catch (BeanCreationException ex) {
             throw ex;
@@ -218,7 +220,9 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
 
 
     private AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata buildAnnotatedMetadata(final Class<?> beanClass) {
+        // 遍历服务类所有的字段，查找Reference注解标注
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedFieldElement> fieldElements = findFieldAnnotationMetadata(beanClass);
+        // 遍历服务类所有的方法，查找Reference注解标注
         Collection<AnnotationInjectedBeanPostProcessor.AnnotatedMethodElement> methodElements = findAnnotatedMethodMetadata(beanClass);
         return new AnnotationInjectedBeanPostProcessor.AnnotatedInjectionMetadata(beanClass, fieldElements, methodElements);
 
@@ -237,6 +241,7 @@ public abstract class AnnotationInjectedBeanPostProcessor<A extends Annotation> 
                         metadata.clear(pvs);
                     }
                     try {
+                        // 构建注解的注入元数据信息
                         metadata = buildAnnotatedMetadata(clazz);
                         this.injectionMetadataCache.put(cacheKey, metadata);
                     } catch (NoClassDefFoundError err) {

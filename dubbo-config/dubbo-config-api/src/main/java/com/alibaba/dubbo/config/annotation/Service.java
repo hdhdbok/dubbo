@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
 
 /**
  * Service
- *
+ * 服务提供者-注解扫描也委托给 Spring, 本质上使用asm库进行字节码扫描注解元数据,
+ * 可以参考Spring源代码 SimpleMetadataReader
  * @export
  */
 @Documented

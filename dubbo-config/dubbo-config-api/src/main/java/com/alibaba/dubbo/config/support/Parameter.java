@@ -32,8 +32,14 @@ public @interface Parameter {
 
     String key() default "";
 
+    /**
+     * 是否必填
+     */
     boolean required() default false;
 
+    /**
+     * 追加参数的时候是否排除在外
+     */
     boolean excluded() default false;
 
     boolean escaped() default false;

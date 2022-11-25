@@ -21,6 +21,7 @@ import com.alibaba.dubbo.common.status.Status;
 import com.alibaba.dubbo.common.utils.NetUtils;
 import com.alibaba.dubbo.registry.NotifyListener;
 import com.alibaba.dubbo.registry.Registry;
+import com.alibaba.dubbo.registry.RegistryFactory;
 import com.alibaba.dubbo.registry.status.RegistryStatusChecker;
 import com.alibaba.dubbo.remoting.zookeeper.curator.CuratorZookeeperTransporter;
 import org.apache.curator.test.TestingServer;
@@ -43,7 +44,7 @@ public class ZookeeperRegistryTest {
     private TestingServer zkServer;
     private ZookeeperRegistry zookeeperRegistry;
     private String service = "com.alibaba.dubbo.test.injvmServie";
-    private URL serviceUrl = URL.valueOf("zookeeper://zookeeper/" + service + "?notify=false&methods=test1,test2");
+    private URL serviceUrl = URL.valueOf("zookeeper://zookeeper/" + service + "?interface=AAA&notify=false&methods=test1,test2");
     private URL anyUrl = URL.valueOf("zookeeper://zookeeper/*");
     private URL registryUrl;
     private ZookeeperRegistryFactory zookeeperRegistryFactory;

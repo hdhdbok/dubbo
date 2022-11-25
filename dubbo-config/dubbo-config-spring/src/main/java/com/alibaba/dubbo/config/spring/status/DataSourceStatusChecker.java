@@ -43,19 +43,23 @@ public class DataSourceStatusChecker implements StatusChecker {
     @SuppressWarnings("unchecked")
     public Status check() {
         ApplicationContext context = null;
+        // 获取第一个不为 null 的上下文
         for (ApplicationContext c : SpringExtensionFactory.getContexts()) {
             if (c != null) {
                 context = c;
                 break;
             }
         }
+        // 如果没有上下文直接返回 UNKNOWN
         if (context == null) {
             return new Status(Status.Level.UNKNOWN);
         }
+        // 从上下文中获取 DataSource，如果没有获取到则返回 UNKNOWN
         Map<String, DataSource> dataSources = context.getBeansOfType(DataSource.class, false, false);
         if (dataSources == null || dataSources.size() == 0) {
             return new Status(Status.Level.UNKNOWN);
         }
+        // 构建 DataSource 的状态信息
         Status.Level level = Status.Level.OK;
         StringBuilder buf = new StringBuilder();
         for (Map.Entry<String, DataSource> entry : dataSources.entrySet()) {
@@ -65,17 +69,21 @@ public class DataSourceStatusChecker implements StatusChecker {
             }
             buf.append(entry.getKey());
             try {
+                // 从数据源中取一个链接
                 Connection connection = dataSource.getConnection();
                 try {
+                    // 获取链接的元数据
                     DatabaseMetaData metaData = connection.getMetaData();
                     ResultSet resultSet = metaData.getTypeInfo();
                     try {
+                        // 如果没有查到数据，则数据源状态设置为 ERROR
                         if (!resultSet.next()) {
                             level = Status.Level.ERROR;
                         }
                     } finally {
                         resultSet.close();
                     }
+                    // 拼接数据源信息
                     buf.append(metaData.getURL());
                     buf.append("(");
                     buf.append(metaData.getDatabaseProductName());

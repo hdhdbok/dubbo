@@ -65,6 +65,7 @@ public class CacheTest extends TestCase {
             try {
                 // verify cache, same result is returned for multiple invocations (in fact, the return value increases
                 // on every invocation on the server side)
+                // 验证缓存，多次调用返回相同的结果（实际上，服务器端每次调用返回值都会增加）
                 String fix = null;
                 for (int i = 0; i < 3; i++) {
                     String result = cacheService.findCache("0");
@@ -75,6 +76,7 @@ public class CacheTest extends TestCase {
 
                 if ("lru".equals(type)) {
                     // default cache.size is 1000 for LRU, should have cache expired if invoke more than 1001 times
+                    // LRU 的默认 cache.size 为 1000，如果调用超过 1001 次，则缓存应该过期
                     for (int n = 0; n < 1001; n++) {
                         String pre = null;
                         for (int i = 0; i < 10; i++) {
@@ -85,6 +87,7 @@ public class CacheTest extends TestCase {
                     }
 
                     // verify if the first cache item is expired in LRU cache
+                    // 验证 LRU 缓存中的第一个缓存项是否过期
                     String result = cacheService.findCache("0");
                     assertFalse(fix == null || fix.equals(result));
                 }

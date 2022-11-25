@@ -64,16 +64,16 @@ public class RegistryConfig extends AbstractConfig {
     // session timeout in milliseconds for register center
     private Integer session;
 
-    // file for saving register center dynamic list
+    // file for saving register center dynamic list: 注册中心动态列表保存文件
     private String file;
 
     // wait time before stop
     private Integer wait;
 
-    // whether to check if register center is available when boot up
+    // whether to check if register center is available when boot up: 开机时是否检查注册中心是否可用
     private Boolean check;
 
-    // whether to allow dynamic service to register on the register center
+    // whether to allow dynamic service to register on the register center: 是否允许动态服务在注册中心注册
     private Boolean dynamic;
 
     // whether to export service on the register center

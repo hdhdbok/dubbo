@@ -92,7 +92,6 @@ public class DubboConfigConfigurationTest {
 
         ApplicationConfig applicationBean3 = context.getBean("applicationBean3", ApplicationConfig.class);
         Assert.assertEquals("dubbo-demo-application3", applicationBean3.getName());
-
     }
 
 }

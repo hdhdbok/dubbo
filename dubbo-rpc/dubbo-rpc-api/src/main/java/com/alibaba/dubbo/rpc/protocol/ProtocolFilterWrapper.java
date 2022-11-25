@@ -52,7 +52,9 @@ public class ProtocolFilterWrapper implements Protocol {
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
+                // 会把真实的Invoker（服务对象ref ）放到拦截器的末尾(逐层包裹其他拦截器，保证真实服务最后触发)
                 final Invoker<T> next = last;
+                // 为每个filter生成一个exporter, 依次串起来
                 last = new Invoker<T>() {
 
                     @Override
@@ -72,6 +74,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
                     @Override
                     public Result invoke(Invocation invocation) throws RpcException {
+                        // 每次调用都会传给下一个拦截器
                         return filter.invoke(next, invocation);
                     }
 
@@ -100,6 +103,8 @@ public class ProtocolFilterWrapper implements Protocol {
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+        // 先构造拦截器链（会过滤provider端分组），然后触发Dubbo协议暴露:
+        // 在触发Dubbo协议暴露前先对服务Invoker做了一层拦截器构建，在加载所有拦截器时会过滤只对provider生效的数据
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
@@ -108,6 +113,7 @@ public class ProtocolFilterWrapper implements Protocol {
         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
             return protocol.refer(type, url);
         }
+        // 先构造拦截器链（会过滤provider端分组），然后触发Dubbo协议引用
         return buildInvokerChain(protocol.refer(type, url), Constants.REFERENCE_FILTER_KEY, Constants.CONSUMER);
     }
 

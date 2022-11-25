@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
  * that Consumer service {@link Reference} annotated fields
+ * 父类实现了postProcessPropertyValues接口
  *
  * @since 2.5.7
  */
