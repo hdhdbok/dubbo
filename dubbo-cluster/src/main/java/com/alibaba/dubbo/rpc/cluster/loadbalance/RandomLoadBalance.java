@@ -25,7 +25,8 @@ import java.util.Random;
 
 /**
  * random load balance.
- *
+ * 随机策略：按权重设置随机概率。
+ * 在一个节点上碰撞的概率高，但调用量越大分布越均匀，而且按概率使用权重后也比较均匀，有利于动态调整提供者的权重
  */
 public class RandomLoadBalance extends AbstractLoadBalance {
 

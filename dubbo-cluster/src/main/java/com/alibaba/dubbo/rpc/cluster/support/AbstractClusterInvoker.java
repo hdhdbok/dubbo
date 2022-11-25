@@ -94,12 +94,19 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
     }
 
     /**
-     * Select a invoker using loadbalance policy.</br>
-     * a)Firstly, select an invoker using loadbalance. If this invoker is in previously selected list, or, 
-     * if this invoker is unavailable, then continue step b (reselect), otherwise return the first selected invoker</br>
+     * Select a invoker using loadbalance policy.<br/>
+     * 使用负载均衡策略选择一个 invoker.<br/>
+     * a)Firstly, select an invoker using loadbalance. If this invoker is in previously selected list, or,
+     * if this invoker is unavailable, then continue step b (reselect), otherwise return the first selected invoker<br/>
+     *  a) 首先使用负载均衡策略选择一个invlker.
+     *  如果这个 invoker 是之前已经选择过的，或者是不可用的，那就继续执行 b 操作（重新选择），
+     *  否则就返回这部选择的 invoker.
+     *
      * b)Reslection, the validation rule for reselection: selected > available. This rule guarantees that
      * the selected invoker has the minimum chance to be one in the previously selected list, and also 
      * guarantees this invoker is available.
+     * b) 重新选择: 重新选择的校验规则为：selected > available
+     * 此规则保证所选 invoker 在之前选择的列表中具有最小的机会，同时也保证此调用程序可用。
      *
      * @param loadbalance load balance policy
      * @param invocation
@@ -113,19 +120,26 @@ public abstract class AbstractClusterInvoker<T> implements Invoker<T> {
             return null;
         String methodName = invocation == null ? "" : invocation.getMethodName();
 
+        // 获取是否启用粘滞连接参数，默认不启用
+        // 粘滞连接用于有状态服务，尽可能让客户端总是向同一提供者发起调用，除非该提供者“挂了”，再连接另一台。
+        // 粘滞连接将自动开启延迟连接，以减少长连接数。
         boolean sticky = invokers.get(0).getUrl().getMethodParameter(methodName, Constants.CLUSTER_STICKY_KEY, Constants.DEFAULT_CLUSTER_STICKY);
         {
             //ignore overloaded method
+            // 如果存在粘滞连接，但是可选 invokers 中不包含当前粘滞链接，则清空掉粘滞连接
             if (stickyInvoker != null && !invokers.contains(stickyInvoker)) {
                 stickyInvoker = null;
             }
             //ignore concurrency problem
+            // 1. 如果启用了粘滞连接，并且粘滞连接已经存在，并且 selected 为空 或者 selected 中包含已经存在的粘滞连接
+            // 2. 如果配置了 availablecheck 并且当前 粘滞连接是可用状态，则直接返回粘滞连接
             if (sticky && stickyInvoker != null && (selected == null || !selected.contains(stickyInvoker))) {
                 if (availablecheck && stickyInvoker.isAvailable()) {
                     return stickyInvoker;
                 }
             }
         }
+        // 使用负责均衡策略选择新的 invoker
         Invoker<T> invoker = doSelect(loadbalance, invocation, invokers, selected);
 
         if (sticky) {

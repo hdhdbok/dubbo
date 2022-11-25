@@ -33,7 +33,10 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * ConsistentHashLoadBalance
- *
+ * 一致性Hash策略：相同参数的请求总是发到同一提供者。
+ * 当某一台提供者“挂”时，原本发往该提供者的请求，基于虚拟节点，会平摊到其他提供者，不会引起剧烈变动。
+ * 默认只对第一个参数“Hash”，如果要修改，则配置 <dubbo:parameter key="hash.arguments" value="0,1" />。
+ * 默认使用160份虚拟节点，如果要修改，则配置〈dubbo:parameter key="hash.nodes" value="320" />
  */
 public class ConsistentHashLoadBalance extends AbstractLoadBalance {
 
@@ -42,14 +45,19 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
     @SuppressWarnings("unchecked")
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
+        // 获得方法名
         String methodName = RpcUtils.getMethodName(invocation);
+        // 以 [接口名] + [方法名] 拼接出 key
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
+        // 把所有可以调用的 Invoker 列表进行 Hash
         int identityHashCode = System.identityHashCode(invokers);
+        // 现在 Invoker 列表的 Hash 码和之前的不一样，说明 Invoker 列表已经发生了变化，则重新创建 Selector
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
             selectors.put(key, new ConsistentHashSelector<T>(invokers, methodName, identityHashCode));
             selector = (ConsistentHashSelector<T>) selectors.get(key);
         }
+        // 通过 selector 选出一个 Invoker
         return selector.select(invocation);
     }
 
@@ -74,11 +82,16 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
                 argumentIndex[i] = Integer.parseInt(index[i]);
             }
             for (Invoker<T> invoker : invokers) {
+                // 遍历所有的节点, 得到每个节点的 ip
                 String address = invoker.getUrl().getAddress();
+                // replicaNumber 默认生成的虚拟节点数，默认是 160 个
                 for (int i = 0; i < replicaNumber / 4; i++) {
+                    // 以 [IP] + [递增数字] 做MD5, 以此作为节点标识
                     byte[] digest = md5(address + i);
                     for (int h = 0; h < 4; h++) {
                         long m = hash(digest, h);
+
+                        // 对标识做 “Hash” 得到 TreeMap 的 key, 以 Invoker 为 value
                         virtualInvokers.put(m, invoker);
                     }
                 }
@@ -101,6 +114,11 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
             return buf.toString();
         }
 
+        /**
+         * TreeMap 是有序的树形结构，所以我们可以调用 TreeMap 的 ceilingEntry 方法，
+         * 用于返回一个至少大于或等于当前给定 key 的 Entry, 从而达到顺时针往前找的效果。
+         * 如果找不到，则使用 firstEntry 返回第一个节点。
+         */
         private Invoker<T> selectForKey(long hash) {
             Map.Entry<Long, Invoker<T>> entry = virtualInvokers.tailMap(hash, true).firstEntry();
             if (entry == null) {
