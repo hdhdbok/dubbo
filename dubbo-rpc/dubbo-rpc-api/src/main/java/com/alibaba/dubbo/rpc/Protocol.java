@@ -28,6 +28,7 @@ public interface Protocol {
 
     /**
      * Get default port when user doesn't config the port.
+     * 当用户没有设置端口的时候，返回默认的端口
      *
      * @return default port
      */
@@ -41,6 +42,10 @@ public interface Protocol {
      * export the same URL<br>
      * 3. Invoker instance is passed in by the framework, protocol needs not to care <br>
      *
+     * 把一个服务暴露成远程 invocation: <br>
+     * 1. 协议收到请求后应记录请求源IP地址。通过 RpcContext.getContext().setRemoteAddress() 方法存入 RPC 上下文。
+     * 2. export 方法必须实现幕等，即无论调用多少次，返回的 URL 都是相同的。
+     * 3. Invoker 实例由框架传入，无须关心协议层。
      * @param <T>     Service type
      * @param invoker Service invoker
      * @return exporter reference for exported service, useful for unexport the service later
@@ -58,6 +63,11 @@ public interface Protocol {
      * 3. When there's check=false set in URL, the implementation must not throw exception but try to recover when
      * connection fails.
      *
+     * 引用一个远程服务: <br>
+     * 1. 当我们调用 refer() 方法返回 Invoker 对象的 invoke() 方法时，协议也需要相应地执行 invoke() 方法。这一点在设计自定义协议的 Invoker 时需要注意。
+     * 2. 正常来说 refer() 方法返回的自定义 Invoker 需要继承 Invoker 接口。
+     * 3. 当 URL 的参数有 check=false 时，自定义的协议实现必须不能抛出异常，而是在出现连接失败异常时尝试恢复连接。
+     *
      * @param <T>  Service type
      * @param type Service class
      * @param url  URL address for the remote service
@@ -72,6 +82,11 @@ public interface Protocol {
      * 1. Cancel all services this protocol exports and refers <br>
      * 2. Release all occupied resources, for example: connection, port, etc. <br>
      * 3. Protocol can continue to export and refer new service even after it's destroyed.
+     *
+     * 销毁: <br>
+     * 1. 调用destroy方法的时候，需要销毁所有本协议暴露和引用的方法。
+     * 2. 需要释放所有占用的资源，如连接、端口等。
+     * 3. 自定义的协议可以在被销毁后继续导出和引用新服务。
      */
     void destroy();
 

@@ -36,7 +36,7 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private final Protocol protocol;
 
-    // 当前类实现了 Protocol,但构造函数中又传入了一个 Protocol 类型的参数，框架会自动注入
+    // 当前类实现了 Protocol, 但构造函数中又传入了一个 Protocol 类型的参数，框架会自动注入
     // 因此 ProtocolFilterWrapper 会被认定为 Wrapper 类。
     // 这是一种装饰器模式，把通用的抽象逻辑进行封装或对子类进行增强，让子类可以更加专注于具体实现。
     public ProtocolFilterWrapper(Protocol protocol) {

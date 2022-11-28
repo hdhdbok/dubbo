@@ -25,6 +25,13 @@ import java.util.concurrent.Executor;
 
 /**
  * ThreadPool
+ * 现阶段，框架中默认含有四种线程池扩展的实现，以下内容摘自官方文档：
+ * • FixedThreadPool: 固定大小线程池，启动时建立线程，不关闭，一直持有。
+ * • CachedThreadPool: 缓存线程池，空闲一分钟自动删除，需要时重建。
+ * • LimitedThreadPool: 可伸缩线程池，但池中的线程数只会增长不会收缩。只增长不收缩的目的是为了避免收缩时突然来了大流量引起的性能问题。
+ * • EagerThreadPoolo: 优先创建 Worker 线程池。在任务数量大于 corePoolSize 小于 maximumPoolSize 时，优先创建Worker来处理任务。
+ *          当任务数量大于 maximumPoolSize 时，将任务放入阻塞队列。
+ *          阻塞队列充满时抛出 RejectedExecutionException (cached 在任务数量超过 maximumPoolSize 时直接抛出异常而不是将任务放入阻塞队列)。
  */
 @SPI("fixed")
 public interface ThreadPool {
