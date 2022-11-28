@@ -85,6 +85,10 @@ final public class MockInvoker<T> implements Invoker<T> {
 
     @Override
     public Result invoke(Invocation invocation) throws RpcException {
+        // 1. 获取 Mock 参数值
+        // 通过URL获取Mock配置的参数，如果为空则抛出异常。
+        // 优先会获取方法级的Mock参数，例如：以 methodName.mock 为 key 去获取参数值；
+        // 如果取不到，则尝试以 mock 为 key 获取对应的参数值。
         String mock = getUrl().getParameter(invocation.getMethodName() + "." + Constants.MOCK_KEY);
         if (invocation instanceof RpcInvocation) {
             ((RpcInvocation) invocation).setInvoker(this);
@@ -97,6 +101,15 @@ final public class MockInvoker<T> implements Invoker<T> {
             throw new RpcException(new IllegalAccessException("mock can not be null. url :" + url));
         }
         mock = normalizeMock(URL.decode(mock));
+        // 2. 处理参数值是直接配置 return * 的配置
+        // 如果只配置了一个 return, 即 mock=return, 则返回一个空的 RpcResult；
+        // 如果 return 后面还跟了别的参数，则首先解析返回类型，然后结合 Mock 参数和返回类型，返回 Mock 值。
+        // 现支持以下类型的参数：
+        // - Mock 参数值等于 empty, 根据返回类型返回 new xxx() 空对象；
+        // - 如果参数值是 null, true, false 则直接返回这些值；
+        // - 如果是其他字符串，则返回字符串；
+        // - 如果是数字、List、Map类型，则返回对应的JSON串；
+        // - 如果都没匹配上，则直接返回Mock的参数值。
         if (mock.startsWith(Constants.RETURN_PREFIX)) {
             mock = mock.substring(Constants.RETURN_PREFIX.length()).trim();
             try {
@@ -108,6 +121,9 @@ final public class MockInvoker<T> implements Invoker<T> {
                         + ", mock:" + mock + ", url: " + url, ew);
             }
         } else if (mock.startsWith(Constants.THROW_PREFIX)) {
+            // 3. 处理参数值是 throw 的配置
+            // 如果 throw 后面没有字符串，则包装成一个 RpcException异常，直接抛出；
+            // 如果 throw 后面有自定义的异常类，则使用自定义的异常类，并包装成一个 RpcException 异常抛出。
             mock = mock.substring(Constants.THROW_PREFIX.length()).trim();
             if (StringUtils.isBlank(mock)) {
                 throw new RpcException("mocked exception for service degradation.");
@@ -116,6 +132,12 @@ final public class MockInvoker<T> implements Invoker<T> {
                 throw new RpcException(RpcException.BIZ_EXCEPTION, t);
             }
         } else { //impl mock
+            // 4. 处理 Mock 实现类
+            // 先从缓存中取，如果有则直接返回。
+            // 如果缓存中没有，则先获取接口的类型，如果 Mock 的参数配置的是 true 或 default, 则尝试通过 “接口名+Mock” 查找 Mock 实现类，
+            // 例如：TestService 会查找 Mock 实现 TestServiceMock
+            // 如果是其他配置方式，则通过 Mock 的参数值进行查找，
+            // 例如：配置了 mock=com.xxx.testService ,则会查找 com.xxx.testService
             try {
                 Invoker<T> invoker = getInvoker(mock);
                 return invoker.invoke(invocation);

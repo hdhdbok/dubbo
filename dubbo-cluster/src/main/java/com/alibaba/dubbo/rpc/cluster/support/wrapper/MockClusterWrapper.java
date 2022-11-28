@@ -23,6 +23,8 @@ import com.alibaba.dubbo.rpc.cluster.Directory;
 
 /**
  * mock impl
+ * 包装类，自动注入合适的扩展点实现
+ * 把被包装扩展类作为初始化参数，来创建并返回一个 MockClusterInvoker
  *
  */
 public class MockClusterWrapper implements Cluster {

@@ -24,6 +24,7 @@ import com.alibaba.dubbo.rpc.protocol.AbstractProtocol;
 
 /**
  * MockProtocol is used for generating a mock invoker by URL and type on consumer side
+ * MockProtocol 用于在消费端通过URL和类型生成模拟调用程序
  */
 final public class MockProtocol extends AbstractProtocol {
 
@@ -34,11 +35,13 @@ final public class MockProtocol extends AbstractProtocol {
 
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        // 不能暴露，否则会抛异常
         throw new UnsupportedOperationException();
     }
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        // 直接把引用的 Mock UrL 转化为一个 MockInvoker 对象
         return new MockInvoker<T>(url);
     }
 }

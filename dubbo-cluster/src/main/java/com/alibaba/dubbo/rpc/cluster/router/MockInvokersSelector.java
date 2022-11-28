@@ -40,13 +40,20 @@ public class MockInvokersSelector extends AbstractRouter {
     @Override
     public <T> List<Invoker<T>> route(final List<Invoker<T>> invokers,
                                       URL url, final Invocation invocation) throws RpcException {
+        // 判断是否需要做 mock 过滤，如果 attachment 为空，或者没有 invocation.need.mock=true 标识, 则认为不需要做 Mock 过滤
         if (invocation.getAttachments() == null) {
             return getNormalInvokers(invokers);
         } else {
             String value = invocation.getAttachments().get(Constants.INVOCATION_NEED_MOCK);
             if (value == null)
+                // 获取非 Mock 类型的 Invoker.
+                // 遍历所有的 Invoker，如果他们的 protocol 中都没有 Mock 参数，则整个列表返回
+                // 否则就把 protocol 中没有 Mock 标识的取出来并返回
                 return getNormalInvokers(invokers);
             else if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                // 获取 Mock 类型的 Invoker.
+                // 遍历所有的 Invoker，如果他们的 protocol 中都没有 Mock 参数，返回 null
+                // 否则就把 protocol 中包含有 Mock 标识的取出来并返回
                 return getMockedInvokers(invokers);
             }
         }
