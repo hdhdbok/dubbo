@@ -39,6 +39,13 @@ public interface RegistryFactory {
      * 5. Support the timeout=1000 request timeout setting.<br>
      * 6. Support session=60000 session timeout or expiration settings.<br>
      *
+     * 1. 如果URL中设置了 check-false, 则连接不会被检查。否则，需要在断开连接时抛出异常。
+     * 2. 需要支持通过 usemame:password 格式在 URL 中传递鉴权。
+     * 3. 需要支持设置 backup 参数来指定备选注册集群的地址。
+     * 4. 需要支持设置 file 参数来指定本地文件缓存。
+     * 5. 需要支持设置 timeout 参数来指定请求的超时时间。
+     * 6. 需要支持设置 session 参数来指定连接的超时或过期时间。
+     *
      * @param url Registry address, is not allowed to be empty
      * @return Registry reference, never return empty value
      */
