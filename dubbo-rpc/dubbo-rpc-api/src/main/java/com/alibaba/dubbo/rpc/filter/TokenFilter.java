@@ -37,11 +37,15 @@ public class TokenFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation inv)
             throws RpcException {
+        // 消费者从注册中心获得服务提供者包含令牌的URL
         String token = invoker.getUrl().getParameter(Constants.TOKEN_KEY);
         if (ConfigUtils.isNotEmpty(token)) {
             Class<?> serviceType = invoker.getInterface();
+            // 消费者RPC调用设置令牌。
+            // 具体是在 Rpclnvocation 的构造方法中，把服务提供者的令牌设置到附件(attachments)中一起请求服务提供者。
             Map<String, String> attachments = inv.getAttachments();
             String remoteToken = attachments == null ? null : attachments.get(Constants.TOKEN_KEY);
+            // 服务提供者认证令牌。
             if (!token.equals(remoteToken)) {
                 throw new RpcException("Invalid token! Forbid invoke remote service " + serviceType + " method " + inv.getMethodName() + "() from consumer " + RpcContext.getContext().getRemoteHost() + " to provider " + RpcContext.getContext().getLocalHost());
             }
