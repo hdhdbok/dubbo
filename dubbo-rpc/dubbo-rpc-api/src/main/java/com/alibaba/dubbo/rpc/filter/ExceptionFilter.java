@@ -60,14 +60,17 @@ public class ExceptionFilter implements Filter {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         try {
             Result result = invoker.invoke(invocation);
+            // 判断是否是泛化调用。如果是泛化调用则直接不处理了。
             if (result.hasException() && GenericService.class != invoker.getInterface()) {
                 try {
                     Throwable exception = result.getException();
 
+                    // 如果异常是Java自带异常，并且是必须显式使用 try-catch 来捕获的异常，则直接抛出。
                     // directly throw if it's checked exception
                     if (!(exception instanceof RuntimeException) && (exception instanceof Exception)) {
                         return result;
                     }
+                    // 如果异常在 Invoker 的签名中出现，则直接抛出异常，并打印 error logo
                     // directly throw if the exception appears in the signature
                     try {
                         Method method = invoker.getInterface().getMethod(invocation.getMethodName(), invocation.getParameterTypes());
@@ -86,22 +89,27 @@ public class ExceptionFilter implements Filter {
                             + ". service: " + invoker.getInterface().getName() + ", method: " + invocation.getMethodName()
                             + ", exception: " + exception.getClass().getName() + ": " + exception.getMessage(), exception);
 
+                    // 如果异常类和接口类在同一个jar包中，则直接抛出异常
                     // directly throw if exception class and interface class are in the same jar file.
                     String serviceFile = ReflectUtils.getCodeBase(invoker.getInterface());
                     String exceptionFile = ReflectUtils.getCodeBase(exception.getClass());
                     if (serviceFile == null || exceptionFile == null || serviceFile.equals(exceptionFile)) {
                         return result;
                     }
+                    // 如果是JDK中的异常，则直接抛出；
                     // directly throw if it's JDK exception
                     String className = exception.getClass().getName();
                     if (className.startsWith("java.") || className.startsWith("javax.")) {
                         return result;
                     }
+                    // 如果是Dubb。中定义的异常，则直接抛出。
                     // directly throw if it's dubbo exception
                     if (exception instanceof RpcException) {
                         return result;
                     }
 
+                    // 处理在前面步骤中无法处理的异常。
+                    // 把异常转换为字符串，并包装成一个 RuntimeException 放入 RpcResult 中返回。
                     // otherwise, wrap with RuntimeException and throw back to the client
                     return new RpcResult(new RuntimeException(StringUtils.toString(exception)));
                 } catch (Throwable e) {
